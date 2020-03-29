@@ -190,7 +190,6 @@ app.post('/api/migration/update/api', Migration.updateAPIs);
 app.post('/api/sync/salesforce', Update.syncSalesForce);
 app.post('/api/update/sf_api', Update.syncSF);
 app.post('/api/sync/gatherup', Update.syncGatherup);
-app.post('/api/sync/internal', Update.syncInternal);
 // DEV TEST
 app.get('/api/salesforce/test', Migration.SFTest);
 app.get('/api/salesforce/login', Migration.SFLogin);
