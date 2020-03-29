@@ -514,49 +514,6 @@ module.exports = {
 			res.status(200).send({ msg: `Error: ${e}` });
 		}
 	},
-	syncInternal: async (req, res) => {
-		try {
-			let db = req.app.get('db');
-			let { og } = req.body;
-			let { c_api, c_id } = og;
-			// Get Review History
-			await axios.get(`http://internal.liftlocal.com/api/migrate/reviews/${c_api.internal}`).then(async res => {
-				let rev = res.data.reviews;
-				await rev
-					// .slice( 0, 1 )
-					.forEach(async e => {
-						let info = `${og.company_name} got ${e.ratings} reviews and has a status of ${e.status}`;
-						await db.create.review_history([c_id, e.date, e.status, e.ratings, info]);
-					});
-			});
-			// Then
-			// Sync Info With Customers
-			let gcust = await db.info.customers.corp_cust_all([og.cor_id]);
-			await axios.get(`http://internal.liftlocal.com/api/migrate/customers/${c_api.internal}`).then(async res => {
-				let cust = res.data.customers;
-				await gcust.forEach(async e => {
-					let indv = cust.filter(el => el.customer_id === e.gather);
-					if (indv[0]) {
-						// Update Last Sent
-						await db.update.gather_last_sent([
-							indv[0].customer_id,
-							e.activity.active[e.activity.active.length - 1].type === 'Customer added' ? '2005-05-25' : indv[0].date_last_sent,
-						]);
-						// console.log(indv[0].customer_id, indv[0].date_last_sent);
-					}
-				});
-				// update customer
-				// console.log(gcust, cust);
-			});
-			let obj = { client: c_api.gatherup.client_id, businessId: c_api.gatherup.business_id };
-			await axios.post(`http://internal.liftlocal.com/api/cancel`, { obj });
-			await Defaults.custCount(req, og);
-			res.status(200).send({ msg: 'GOOD' });
-		} catch (e) {
-			Err.emailMsg(e, 'UPDATE/syncInternal');
-			res.status(200).send({ msg: `Error: ${e}` });
-		}
-	},
 	updateLogoLink: async (req, res) => {
 		try {
 			let { client_id, link, accent } = req.body;

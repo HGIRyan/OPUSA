@@ -467,38 +467,6 @@ if (!DEV && PROD) {
 		// Get Account Manager
 	});
 } else {
-	// Get All that dont have finished ID's
-	// cron.scheduleJob('05 04 * * * *', async () => {
-	// 	let allComp = await app.get('db').info.all_record_business([]);
-	// 	allComp
-	// 		.filter(e => e.c_api.internal && !e.c_api.gatherup.business_id && !e.c_api.gatherup.client_id)
-	// 		.map(async e => {
-	// 			let ids = await require('axios').post('http://localhost:4000/api/getid', { agent_id: e.c_api.internal });
-	// 			if (ids.status === 200) {
-	// 				e.c_api.gatherup = { business_id: ids.data.business_id, client_id: ids.data.client };
-	// 				// console.log(e.company_name, e.c_api);
-	// 				await app.get('db').migrate.gatherup_keys([e.c_id, e.c_api]);
-	// 			} else {
-	// 				console.log('issue with', e.company_name, e.c_id, e.c_api.internal);
-	// 			}
-	// 		});
-	// });
-	// KEEP UNTIL ALL FINISHED
-	// Deactivate All From Gatherup
-	// cron.scheduleJob('35 31 * * * *', async () => {
-	// 	let allComp = await app.get('db').info.all_record_business([]);
-	// 	await allComp
-	// 		.filter(e => e.c_api.gatherup.business_id)
-	// 		.map(async e => {
-	// 			await require('axios')
-	// 				.post('http://internal.liftlocal.com/api/cancel', { client: e.c_api.gatherup.client_id, businessId: e.c_api.gatherup.business_id })
-	// 				.then(res => {
-	// 					if (res.status === 200) {
-	// 						console.log('All Gucci', e.company_name, e.c_api.gatherup);
-	// 					}
-	// 				});
-	// 		});
-	// });
 }
 
 // =========================================
