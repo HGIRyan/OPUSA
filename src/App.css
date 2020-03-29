@@ -294,7 +294,7 @@ blockquote {
 	border-left: 5px solid #00d885f5 !important;
 }
 .primary-color {
-	background-color: #00d885 !important;
+	background-color: #8dcaff !important;
 	color: white !important;
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webkit-user-select: none; /* Safari */ /* Konqueror HTML */
@@ -304,7 +304,7 @@ blockquote {
                                   supported by Chrome, Opera and Firefox */
 }
 .primary-hover:hover {
-	background-color: #00d885af !important;
+	background-color: rgba(141, 202, 255, 0.75) !important;
 	color: white !important;
 }
 .secondary-color {
@@ -340,7 +340,7 @@ hr {
 	color: #f9f9f9 !important;
 }
 .tertiary-color {
-	background-color: #00283d !important;
+	background-color: #1761a0 !important;
 	color: white !important;
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webkit-user-select: none; /* Safari */ /* Konqueror HTML */
@@ -350,7 +350,7 @@ hr {
                                   supported by Chrome, Opera and Firefox */
 }
 .tertiary-hover:hover {
-	background-color: #00283db4 !important;
+	background-color: rgba(23, 97, 160, 0.75) !important;
 	color: white !important;
 }
 .wten {
