@@ -1,0 +1,1 @@
+select * from login where (lower(username) = lower($1) or lower(email) = lower($1)) and user_id != $2;
