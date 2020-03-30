@@ -1,5 +1,12 @@
 /* prefixed by https://autoprefixer.github.io (PostCSS: v7.0.26, autoprefixer: v9.7.3) */
-
+:root {
+	--primary-color: #00d885;
+	--primary-hover: #00d885af;
+	--secondary-color: #6c6a6b;
+	--secondary-hover: rgba(108, 106, 107, 0.75);
+	--tertiary-color: #00283d;
+	--tertiary-hover: #00283db4;
+}
 /*  */
 @import url('https://fonts.googleapis.com/css?family=Hind+Vadodara&display=swap');
 /* Smartphones (portrait and landscape) ———– */
@@ -194,7 +201,7 @@ th {
 	position: -webkit-sticky;
 	top: -webkit-calc(5vh - 1px);
 	height: 5vh;
-	background-color: #00d885;
+	background-color: var(--primary-color);
 	color: white;
 }
 
@@ -223,7 +230,7 @@ hr {
 .styled-select {
 	overflow: hidden;
 	border-radius: 20px;
-	background-color: #00d885f5;
+	background-color: var(--primary-color);
 }
 .underline {
 	text-decoration: underline;
@@ -291,10 +298,10 @@ input[type='file']:hover {
 	display: none;
 }
 blockquote {
-	border-left: 5px solid #00d885f5 !important;
+	border-left: 5px solid var(--primary-color) !important;
 }
 .primary-color {
-	background-color: #8dcaff !important;
+	background-color: var(--primary-color) !important;
 	color: white !important;
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webkit-user-select: none; /* Safari */ /* Konqueror HTML */
@@ -304,11 +311,11 @@ blockquote {
                                   supported by Chrome, Opera and Firefox */
 }
 .primary-hover:hover {
-	background-color: rgba(141, 202, 255, 0.75) !important;
+	background-color: var(--primary-hover) !important;
 	color: white !important;
 }
 .secondary-color {
-	background-color: #6c6a6b !important;
+	background-color: var(--secondary-color) !important;
 	color: #f9f9f9 !important;
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webkit-user-select: none; /* Safari */ /* Konqueror HTML */
@@ -318,12 +325,12 @@ blockquote {
                                   supported by Chrome, Opera and Firefox */
 }
 .secondary-hover:hover {
-	background-color: rgba(108, 106, 107, 0.75) !important;
+	background-color: var(--secondary-hover) !important;
 	color: #f9f9f9 !important;
 }
 hr {
-	/* color: rgba(108, 106, 107, 0.75) !important; */
-	border-color: rgba(108, 106, 107, 0.75) !important;
+	/* color: var(--secondary-hover) !important; */
+	border-color: var(--secondary-hover) !important;
 }
 .sidebar-color {
 	background-color: #000000 !important;
@@ -340,7 +347,7 @@ hr {
 	color: #f9f9f9 !important;
 }
 .tertiary-color {
-	background-color: #1761a0 !important;
+	background-color: var(--tertiary-color) !important;
 	color: white !important;
 	-webkit-touch-callout: none; /* iOS Safari */
 	-webkit-user-select: none; /* Safari */ /* Konqueror HTML */
@@ -350,7 +357,7 @@ hr {
                                   supported by Chrome, Opera and Firefox */
 }
 .tertiary-hover:hover {
-	background-color: rgba(23, 97, 160, 0.75) !important;
+	background-color: var(--tertiary-hover) !important;
 	color: white !important;
 }
 .wten {
@@ -427,8 +434,8 @@ textarea {
 	white-space: normal;
 }
 .toolTip {
-	color: #00d885 !important;
-	background-color: #6c6a6b !important;
+	color: var(--primary-color) !important;
+	background-color: var(--secondary-color) !important;
 	border: #000000;
 }
 .noCursor {
@@ -590,12 +597,12 @@ button:disabled {
 }
 
 .CalendarDay__selected_span {
-	background-color: #00d885af !important;
+	background-color: var(--primary-hover) !important;
 	font-family: 'Hind Vadodara', sans-serif !important;
 }
 .CalendarDay__selected {
 	font-family: 'Hind Vadodara', sans-serif !important;
-	background-color: rgba(108, 106, 107, 0.75) !important;
+	background-color: var(--secondary-hover) !important;
 }
 .DateInput {
 	font-family: 'Hind Vadodara', sans-serif !important;
