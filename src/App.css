@@ -1,13 +1,13 @@
 /* prefixed by https://autoprefixer.github.io (PostCSS: v7.0.26, autoprefixer: v9.7.3) */
 :root {
-	--primary-color: #00d885;
-	--primary-hover: #00d885af;
+	--primary-color: #8dcaff;
+	--primary-hover: rgba(141, 202, 255, 0.75);
 	--secondary-color: #6c6a6b;
 	--secondary-hover: rgba(108, 106, 107, 0.75);
-	--tertiary-color: #00283d;
-	--tertiary-hover: #00283db4;
+	--tertiary-color: #1761a0;
+	--tertiary-hover: rgba(23, 97, 160, 0.75);
 }
-/*  */
+/*  */ /*  */
 @import url('https://fonts.googleapis.com/css?family=Hind+Vadodara&display=swap');
 /* Smartphones (portrait and landscape) ———– */
 @media only screen and (min-width: 320px) and (max-width: 480px) {
