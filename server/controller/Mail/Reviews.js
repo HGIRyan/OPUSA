@@ -16,25 +16,29 @@ module.exports = {
 			let today = () => moment().format('LLL');
 			// console.log(today(), emails.length ? emails.length : 1, `Email${emails.length ? 's' : ''} Sent For ${emails[0].category[3]}`);
 			// recieves an Array of objects
-			sgMail
-				.send(emails.filter(e => e.to.email && e.from.email))
-				.then(() => {
-					msg ? console.log(msg) : '';
-					console.log(
-						'\x1b[36m%s\x1b[0m',
-						DEV ? 'SENT IN DEV MODE:' : '',
-						today(),
-						emails.length ? emails.filter(e => e.to.email && e.from.email).length : 1,
-						`Email${emails.filter(e => e.to.email && e.from.email).length ? 's' : ''} Sent For ${emails[0].category[3]}`,
-					);
-				})
-				.catch(error => {
-					const { message, code, response } = error;
-					console.log(`Error For ${emails[0].category[3]}`, error.toString());
-					console.log('ERROR: ', message, code, response);
-					// const { headers, body } = response;
-					// console.log('Response: ', headers, body);
-				});
+			let email = emails.filter((e) => (e.to.email || e.to) && (e.from.email || e.from));
+			if (email[0]) {
+				sgMail
+					.send(email)
+					.then(() => {
+						msg ? console.log(msg) : '';
+						console.log(
+							'\x1b[36m%s\x1b[0m',
+							DEV ? 'SENT IN DEV MODE:' : '',
+							today(),
+							email.length ? email.length : 1,
+							`Email${email.length ? 's' : ''} Sent For ${email[0].category[3]}`,
+						);
+					})
+					.catch((error) => {
+						console.log(`Error For ${emails[0].category[3]}`, error.toString(), emails[0].to, emails[0].from, emails[0].category);
+						// console.log('ERROR: ', message, code, response);
+						// const { headers, body } = response;
+						// console.log('Response: ', headers, body);
+					});
+			} else {
+				console.log('Could Not Send Email');
+			}
 		} catch (e) {
 			Err.emailMsg(e, 'Reviews/sendMail');
 		}
@@ -43,63 +47,50 @@ module.exports = {
 		try {
 			// Standard Initial Email
 			let db = app.get('db');
-			let companies = await db.mail.all_business([offset]).catch(err => console.log('ERROR:: ', err));
-			companies = companies.filter(comp => comp.active && comp.active_prod.reviews && comp.c_id);
+			let companies = await db.mail.all_business([offset]).catch((err) => console.log('ERROR:: ', err));
+			companies = companies.filter((comp) => comp.active && comp.active_prod.reviews && comp.c_id);
 			console.log(`Starting First Send to ${companies.length} Companies On`, moment().format('LLLL'), offset);
 			await Promise.all(
-				companies.map(async comp => {
+				companies.map(async (comp) => {
 					let customers = await db.mail
 						.review_s([
 							comp.c_id,
-							moment()
-								.subtract(offset.split('-')[1], 'minutes')
-								.subtract(comp.repeat_request.repeat, 'days')
-								.format('YYYY-MM-DD'),
+							moment().subtract(offset.split('-')[1], 'minutes').subtract(comp.repeat_request.repeat, 'days').format('YYYY-MM-DD'),
 							comp.auto_amt.amt,
 						])
-						.catch(err => console.log('ERROR:: ', err));
+						.catch((err) => console.log('ERROR:: ', err));
 					if (customers[0]) {
 						let cust = await Promise.all(
 							customers
-								.filter(i => i.email.emailValidate() && i.id)
-								.map(async cust => {
+								.filter((i) => i.email.emailValidate() && i.id)
+								.map(async (cust) => {
 									let { first_name, email, feedback_text, id, activity } = cust;
 									if (!cust.f_id) {
-										let feed = await db.record.create_feedback([id, 'First Send']).catch(err => console.log(err));
-										!DEV && PROD ? await db.record.reset_feedback([feed[0].f_id]).catch(err => console.log(err)) : null;
+										let feed = await db.record.create_feedback([id, 'First Send']).catch((err) => console.log(err));
+										!DEV && PROD ? await db.record.reset_feedback([feed[0].f_id]).catch((err) => console.log(err)) : null;
 									} else {
-										!DEV && PROD ? await db.record.reset_feedback([cust.f_id]).catch(err => console.log(err)) : null;
+										!DEV && PROD ? await db.record.reset_feedback([cust.f_id]).catch((err) => console.log(err)) : null;
 									}
 									activity.active
 										? activity.active.push({
 												type: 'First Review Request',
-												date: moment()
-													.subtract(offset.split('-')[1], 'minutes')
-													.format('YYYY-MM-DD'),
+												date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 										  })
 										: {
 												active: [
 													{
 														type: 'First Review Request',
-														date: moment()
-															.subtract(offset.split('-')[1], 'minutes')
-															.format('YYYY-MM-DD'),
+														date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 													},
 												],
 										  };
 									// RESET FEEDBACK
 									!DEV && PROD
 										? await db.record
-												.update_sent([
-													id,
-													moment()
-														.subtract(offset.split('-')[1], 'minutes')
-														.format('YYYY-MM-DD'),
-													activity,
-												])
-												.catch(err => console.log(err))
+												.update_sent([id, moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'), activity])
+												.catch((err) => console.log(err))
 										: null;
-									!DEV && PROD ? await db.record.update_feedback_rs([id, false, 'First Send']).catch(err => console.log(err)) : null;
+									!DEV && PROD ? await db.record.update_feedback_rs([id, false, 'First Send']).catch((err) => console.log(err)) : null;
 									let format = {
 										to: {
 											email: DEV && !PROD ? process.env.REACT_APP_DEV_EMAIL : email,
@@ -111,7 +102,7 @@ module.exports = {
 												: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
 											name: comp.owner_name.first + ' ' + comp.owner_name.last,
 										},
-										replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}`,
+										replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 										subject: !DEV && PROD ? await templates.keywords(comp.s_subject, comp, cust) : `${cust.first_name} DEV FIRST SEND`,
 										text: await templates.text(comp, cust, 's'),
 										html: await templates.filter(comp, cust, 's'),
@@ -139,57 +130,41 @@ module.exports = {
 		try {
 			//First Reminder Email
 			let db = app.get('db');
-			let companies = await db.mail.all_business([offset]).catch(err => console.log(err));
-			companies = companies.filter(comp => comp.active && comp.active_prod.reviews && comp.c_id);
+			let companies = await db.mail.all_business([offset]).catch((err) => console.log(err));
+			companies = companies.filter((comp) => comp.active && comp.active_prod.reviews && comp.c_id);
 			console.log(`Starting First Reminder to ${companies.length} Companies On`, moment().format('LLLL'), offset);
 			await Promise.all(
 				companies
 					// .filter(comp => comp.active && comp.active_prod.reviews && comp.c_id)
-					.map(async comp => {
+					.map(async (comp) => {
 						let customers = await db.mail
-							.review_fr_([
-								comp.c_id,
-								moment()
-									.subtract(offset.split('-')[1], 'minutes')
-									.subtract(comp.repeat_request.first, 'days')
-									.format('YYYY-MM-DD'),
-							])
-							.catch(err => console.log(err));
+							.review_fr_([comp.c_id, moment().subtract(offset.split('-')[1], 'minutes').subtract(comp.repeat_request.first, 'days').format('YYYY-MM-DD')])
+							.catch((err) => console.log(err));
 						if (customers[0]) {
 							let cust = await Promise.all(
 								customers
-									.filter(i => i.email.emailValidate() && i.id)
-									.map(async cust => {
+									.filter((i) => i.email.emailValidate() && i.id)
+									.map(async (cust) => {
 										let { first_name, email, feedback_text, id, activity } = cust;
 										activity.active
 											? activity.active.push({
 													type: 'First Review Reminder',
-													date: moment()
-														.subtract(offset.split('-')[1], 'minutes')
-														.format('YYYY-MM-DD'),
+													date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 											  })
 											: {
 													active: [
 														{
 															type: 'First Review Reminder',
-															date: moment()
-																.subtract(offset.split('-')[1], 'minutes')
-																.format('YYYY-MM-DD'),
+															date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 														},
 													],
 											  };
 										!DEV && PROD
 											? await db.record
-													.update_sent([
-														id,
-														moment()
-															.subtract(offset.split('-')[1], 'minutes')
-															.format('YYYY-MM-DD'),
-														activity,
-													])
-													.catch(err => console.log(err))
+													.update_sent([id, moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'), activity])
+													.catch((err) => console.log(err))
 											: null;
-										!DEV && PROD ? await db.record.update_feedback([id, 'First Reminder']).catch(err => console.log(err)) : null;
+										!DEV && PROD ? await db.record.update_feedback([id, 'First Reminder']).catch((err) => console.log(err)) : null;
 										let format = {
 											to: {
 												email: DEV ? process.env.REACT_APP_DEV_EMAIL : email,
@@ -201,7 +176,7 @@ module.exports = {
 													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
 												name: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
-											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}`,
+											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.fr_subject, comp, cust) : `${cust.first_name} DEV FIRST REMINDER`,
 											text: await templates.text(comp, cust, 'fr'),
 											html: await templates.filter(comp, cust, 'fr'),
@@ -224,58 +199,42 @@ module.exports = {
 		try {
 			//Second Reminder Email
 			let db = app.get('db');
-			let companies = await db.mail.all_business([offset]).catch(err => console.log(err));
-			companies = companies.filter(comp => comp.active && comp.active_prod.reviews && comp.c_id);
+			let companies = await db.mail.all_business([offset]).catch((err) => console.log(err));
+			companies = companies.filter((comp) => comp.active && comp.active_prod.reviews && comp.c_id);
 			console.log(`Starting Second Reminder to ${companies.length} Companies On`, moment().format('LLLL'), offset);
 			await Promise.all(
 				companies
 					// .filter(comp => comp.active && comp.active_prod.reviews && comp.c_id)
-					.map(async comp => {
+					.map(async (comp) => {
 						// MAKE QUERY
 						let customers = await db.mail
-							.review_sr_([
-								comp.c_id,
-								moment()
-									.subtract(offset.split('-')[1], 'minutes')
-									.subtract(comp.repeat_request.second, 'days')
-									.format('YYYY-MM-DD'),
-							])
-							.catch(err => console.log(err));
+							.review_sr_([comp.c_id, moment().subtract(offset.split('-')[1], 'minutes').subtract(comp.repeat_request.second, 'days').format('YYYY-MM-DD')])
+							.catch((err) => console.log(err));
 						if (customers[0]) {
 							let cust = await Promise.all(
 								customers
-									.filter(i => i.email.emailValidate() && i.id)
-									.map(async cust => {
+									.filter((i) => i.email.emailValidate() && i.id)
+									.map(async (cust) => {
 										let { first_name, email, feedback_text, id, activity } = cust;
 										activity.active
 											? activity.active.push({
 													type: 'Second Review Reminder',
-													date: moment()
-														.subtract(offset.split('-')[1], 'minutes')
-														.format('YYYY-MM-DD'),
+													date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 											  })
 											: {
 													active: [
 														{
 															type: 'Second Review Reminder',
-															date: moment()
-																.subtract(offset.split('-')[1], 'minutes')
-																.format('YYYY-MM-DD'),
+															date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 														},
 													],
 											  };
 										!DEV && PROD
 											? await db.record
-													.update_sent([
-														id,
-														moment()
-															.subtract(offset.split('-')[1], 'minutes')
-															.format('YYYY-MM-DD'),
-														activity,
-													])
-													.catch(err => console.log(err))
+													.update_sent([id, moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'), activity])
+													.catch((err) => console.log(err))
 											: null;
-										!DEV && PROD ? await db.record.update_feedback([id, 'Second Reminder']).catch(err => console.log(err)) : null;
+										!DEV && PROD ? await db.record.update_feedback([id, 'Second Reminder']).catch((err) => console.log(err)) : null;
 										let format = {
 											to: {
 												email: DEV ? process.env.REACT_APP_DEV_EMAIL : email,
@@ -287,7 +246,7 @@ module.exports = {
 													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
 												name: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
-											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}`,
+											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.sr_subject, comp, cust) : `${cust.first_name} DEV Second REMINDER`,
 											text: await templates.text(comp, cust, 'sr'),
 											html: await templates.filter(comp, cust, 'sr'),
@@ -310,57 +269,41 @@ module.exports = {
 		try {
 			// Opened Reminder Email
 			let db = app.get('db');
-			let companies = await db.mail.all_business([offset]).catch(err => console.log(err));
-			companies = companies.filter(comp => comp.active && comp.active_prod.reviews && comp.c_id);
+			let companies = await db.mail.all_business([offset]).catch((err) => console.log(err));
+			companies = companies.filter((comp) => comp.active && comp.active_prod.reviews && comp.c_id);
 			console.log(`Starting Open Reminder to ${companies.length} Companies On`, moment().format('LLLL'), offset);
 			await Promise.all(
 				companies
 					// .filter(comp => comp.active && comp.active_prod.reviews && comp.c_id)
-					.map(async comp => {
+					.map(async (comp) => {
 						let customers = await db.mail
-							.review_or_([
-								comp.c_id,
-								moment()
-									.subtract(offset.split('-')[1], 'minutes')
-									.subtract(comp.repeat_request.open, 'days')
-									.format('YYYY-MM-DD'),
-							])
-							.catch(err => console.log(err));
+							.review_or_([comp.c_id, moment().subtract(offset.split('-')[1], 'minutes').subtract(comp.repeat_request.open, 'days').format('YYYY-MM-DD')])
+							.catch((err) => console.log(err));
 						if (customers[0]) {
 							let cust = await Promise.all(
 								customers
-									.filter(i => validate.validate(i.email) && i.id)
-									.map(async cust => {
+									.filter((i) => validate.validate(i.email) && i.id)
+									.map(async (cust) => {
 										let { first_name, email, feedback_text, id, activity } = cust;
 										activity.active
 											? activity.active.push({
 													type: 'Opened Reminder',
-													date: moment()
-														.subtract(offset.split('-')[1], 'minutes')
-														.format('YYYY-MM-DD'),
+													date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 											  })
 											: {
 													active: [
 														{
 															type: 'Opened Reminder',
-															date: moment()
-																.subtract(offset.split('-')[1], 'minutes')
-																.format('YYYY-MM-DD'),
+															date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 														},
 													],
 											  };
 										!DEV && PROD
 											? await db.record
-													.update_sent([
-														id,
-														moment()
-															.subtract(offset.split('-')[1], 'minutes')
-															.format('YYYY-MM-DD'),
-														activity,
-													])
-													.catch(err => console.log(err))
+													.update_sent([id, moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'), activity])
+													.catch((err) => console.log(err))
 											: null;
-										!DEV && PROD ? await db.record.update_feedback([id, 'Open Reminder']).catch(err => console.log(err)) : null;
+										!DEV && PROD ? await db.record.update_feedback([id, 'Open Reminder']).catch((err) => console.log(err)) : null;
 										let format = {
 											// Pass through correct object and recieve formatted object to push into array to send through sendgrid
 											to: {
@@ -373,7 +316,7 @@ module.exports = {
 													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
 												name: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
-											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}`,
+											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.or_subject, comp, cust) : `${cust.first_name} DEV OPEN REMINDER`,
 											text: await templates.text(comp, cust, 'or'),
 											html: await templates.filter(comp, cust, 'or'),
@@ -396,57 +339,41 @@ module.exports = {
 		try {
 			// Positive Feedback Reminder Email
 			let db = app.get('db');
-			let companies = await db.mail.all_business([offset]).catch(err => console.log(err));
-			companies = companies.filter(comp => comp.active && comp.active_prod.reviews && comp.c_id);
+			let companies = await db.mail.all_business([offset]).catch((err) => console.log(err));
+			companies = companies.filter((comp) => comp.active && comp.active_prod.reviews && comp.c_id);
 			console.log(`Starting Positive Reminder to ${companies.length} Companies On`, moment().format('LLLL'), offset);
 			await Promise.all(
 				companies
 					// .filter(comp => comp.active && comp.active_prod.reviews && comp.c_id)
-					.map(async comp => {
+					.map(async (comp) => {
 						let customers = await db.mail
-							.review_pr_([
-								comp.c_id,
-								moment()
-									.subtract(offset.split('-')[1], 'minutes')
-									.subtract(comp.repeat_request.positive, 'days')
-									.format('YYYY-MM-DD'),
-							])
-							.catch(err => console.log(err));
+							.review_pr_([comp.c_id, moment().subtract(offset.split('-')[1], 'minutes').subtract(comp.repeat_request.positive, 'days').format('YYYY-MM-DD')])
+							.catch((err) => console.log(err));
 						if (customers[0]) {
 							let cust = await Promise.all(
 								customers
-									.filter(i => validate.validate(i.email) && i.id)
-									.map(async cust => {
+									.filter((i) => validate.validate(i.email) && i.id)
+									.map(async (cust) => {
 										let { first_name, email, id, activity } = cust;
 										activity.active
 											? activity.active.push({
 													type: 'Positive Reminder',
-													date: moment()
-														.subtract(offset.split('-')[1], 'minutes')
-														.format('YYYY-MM-DD'),
+													date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 											  })
 											: {
 													active: [
 														{
 															type: 'Positive Reminder',
-															date: moment()
-																.subtract(offset.split('-')[1], 'minutes')
-																.format('YYYY-MM-DD'),
+															date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 														},
 													],
 											  };
 										!DEV && PROD
 											? await db.record
-													.update_sent([
-														id,
-														moment()
-															.subtract(offset.split('-')[1], 'minutes')
-															.format('YYYY-MM-DD'),
-														activity,
-													])
-													.catch(err => console.log(err))
+													.update_sent([id, moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'), activity])
+													.catch((err) => console.log(err))
 											: null;
-										!DEV && PROD ? await db.record.update_feedback([id, 'Positive Reminder']).catch(err => console.log(err)) : null;
+										!DEV && PROD ? await db.record.update_feedback([id, 'Positive Reminder']).catch((err) => console.log(err)) : null;
 										let format = {
 											// Pass through correct object and recieve formatted object to push into array to send through sendgrid
 											to: {
@@ -459,7 +386,7 @@ module.exports = {
 													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
 												name: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
-											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}`,
+											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.pr_subject, comp, cust) : `${cust.first_name} DEV POSITIVE REMINDER`,
 											text: await templates.text(comp, cust, 'pr'),
 											html: await templates.filter(comp, cust, 'pr'),
@@ -483,59 +410,43 @@ module.exports = {
 		try {
 			//Second Positive Reminder Email
 			let db = app.get('db');
-			let companies = await db.mail.all_business([offset]).catch(err => console.log(err));
-			companies = companies.filter(comp => comp.active && comp.active_prod.reviews && comp.c_id);
+			let companies = await db.mail.all_business([offset]).catch((err) => console.log(err));
+			companies = companies.filter((comp) => comp.active && comp.active_prod.reviews && comp.c_id);
 			console.log(`Starting Second Positive Reminder to ${companies.length} Companies On`, moment().format('LLLL'), offset);
 			await Promise.all(
 				companies
 					//.slice(0, 250)
 					// .filter(comp => comp.active && comp.active_prod.reviews && comp.c_id)
-					.map(async comp => {
+					.map(async (comp) => {
 						// MAKE QUERY
 						let customers = await db.mail
-							.review_spr_([
-								comp.c_id,
-								moment()
-									.subtract(offset.split('-')[1], 'minutes')
-									.subtract(comp.repeat_request.second, 'days')
-									.format('YYYY-MM-DD'),
-							])
-							.catch(err => console.log(err));
+							.review_spr_([comp.c_id, moment().subtract(offset.split('-')[1], 'minutes').subtract(comp.repeat_request.second, 'days').format('YYYY-MM-DD')])
+							.catch((err) => console.log(err));
 						if (customers[0]) {
 							let cust = await Promise.all(
 								customers
-									.filter(i => i.email.emailValidate() && i.id)
-									.map(async cust => {
+									.filter((i) => i.email.emailValidate() && i.id)
+									.map(async (cust) => {
 										let { first_name, email, feedback_text, id, activity } = cust;
 										activity.active
 											? activity.active.push({
 													type: 'Second Positive Review Reminder',
-													date: moment()
-														.subtract(offset.split('-')[1], 'minutes')
-														.format('YYYY-MM-DD'),
+													date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 											  })
 											: {
 													active: [
 														{
 															type: 'Second Positive Review Reminder',
-															date: moment()
-																.subtract(offset.split('-')[1], 'minutes')
-																.format('YYYY-MM-DD'),
+															date: moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'),
 														},
 													],
 											  };
 										!DEV && PROD
 											? await db.record
-													.update_sent([
-														id,
-														moment()
-															.subtract(offset.split('-')[1], 'minutes')
-															.format('YYYY-MM-DD'),
-														activity,
-													])
-													.catch(err => console.log(err))
+													.update_sent([id, moment().subtract(offset.split('-')[1], 'minutes').format('YYYY-MM-DD'), activity])
+													.catch((err) => console.log(err))
 											: null;
-										!DEV && PROD ? await db.record.update_feedback([id, 'Second Positive Reminder']).catch(err => console.log(err)) : null;
+										!DEV && PROD ? await db.record.update_feedback([id, 'Second Positive Reminder']).catch((err) => console.log(err)) : null;
 										let format = {
 											to: {
 												email: DEV ? process.env.REACT_APP_DEV_EMAIL : email,
@@ -547,7 +458,7 @@ module.exports = {
 													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
 												name: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
-											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}`,
+											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.spr_subject, comp, cust) : `${cust.first_name} DEV Second Positive REMINDER`,
 											text: await templates.text(comp, cust, 'spr'),
 											html: await templates.filter(comp, cust, 'spr'),
@@ -566,14 +477,14 @@ module.exports = {
 			console.log('ERROR Reviews/spr_', e);
 		}
 	},
-	depleatedList: async comp => {
+	depleatedList: async (comp) => {
 		try {
 			console.log('Yo Wassup', comp.c_id);
 		} catch (e) {
 			Err.emailMsg(e, 'Reviews/depleatedList');
 		}
 	},
-	SendGridTest: async app => {
+	SendGridTest: async (app) => {
 		try {
 			const msg = {
 				to: 'test@example.com',
@@ -606,13 +517,14 @@ module.exports = {
 					: type.email === 'pr'
 					? 'Positive Reminder'
 					: 'Second Positive Reminder';
+			console.log('MANUAL SEND: ', selected.length, 'Total Emails Being Sent');
 			let emails = await Promise.all(
 				selected
-					.filter(i => i.email.emailValidate() && i.cus_id)
-					.map(async cust => {
+					.filter((i) => i.email.emailValidate() && i.cus_id)
+					.map(async (cust) => {
 						let { first_name, email, cus_id, activity } = cust;
 						if (!cust.f_id) {
-							await db.record.create_feedback([cus_id, `Manual Review Request: ${type.email}`]).catch(err => console.log(err));
+							await db.record.create_feedback([cus_id, `Manual Review Request: ${type.email}`]).catch((err) => console.log(err));
 						}
 						activity.active
 							? activity.active.push({
@@ -627,8 +539,8 @@ module.exports = {
 										},
 									],
 							  };
-						!DEV ? await db.record.update_sent([cus_id, moment().format('YYYY-MM-DD'), activity]).catch(err => console.log(err)) : null;
-						!DEV ? await db.record.update_feedback_rs([cus_id, false, lastEmail]).catch(err => console.log(err)) : null;
+						!DEV ? await db.record.update_sent([cus_id, moment().format('YYYY-MM-DD'), activity]).catch((err) => console.log(err)) : null;
+						!DEV ? await db.record.update_feedback_rs([cus_id, false, lastEmail]).catch((err) => console.log(err)) : null;
 						let fromEmail =
 							bus.email.email[0] === null || !bus.email.email[0].emailValidate() ? `reviews@${bus.company_name.replace(/\s/g, '')}.com` : bus.email.email[0];
 						let format = {
@@ -641,7 +553,7 @@ module.exports = {
 								email: fromEmail,
 								name: bus.owner_name.first + ' ' + bus.owner_name.last,
 							},
-							replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}`,
+							replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 							subject: !DEV && PROD ? await templates.keywords(bus[type.subject], bus, cust) : `${cust.first_name} DEV MANUAL SEND: ${type.email}`,
 							text: await templates.text(bus, cust, type.email),
 							html: await templates.filter(bus, cust, type.email),
@@ -651,7 +563,7 @@ module.exports = {
 						return format;
 					}),
 			);
-			module.exports.sendMail(emails, 'MANUAL');
+			module.exports.sendMail(emails);
 			res.status(200).send({ msg: 'GOOD', sent: emails.length });
 		} catch (e) {
 			Err.emailMsg(e, 'Reviews/ManualSend');

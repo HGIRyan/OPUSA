@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Layout1, LoadingWrapper, NoDiv, LoadingWrapperSmall } from './../../../utilities/index';
 import axios from 'axios';
+const { detect } = require('detect-browser');
+const browser = detect();
 
 class CustView extends Component {
 	constructor() {
@@ -31,36 +33,81 @@ class CustView extends Component {
 		let item = this.props.location.state.info.filter(item => item.c_id === parseInt(client_id));
 		if (item[0]) {
 			this.setState({ bus: item[0] });
-			if (this.props.location.state.focus_cust) {
-				if (this.props.location.state.focus_cust[0].cor_id === parseInt(cor_id)) {
-					let cust = this.props.location.state.focus_cust.filter(e => e.cus_id === parseInt(cust_id));
-					if (cust[0]) {
-						let { first_name, last_name, email, phone, activity, rating } = cust[0];
-						phone = phone ? phone : 'N/A';
-						this.setState({
-							firstName: first_name.toProper(),
-							lastName: last_name.toProper(),
-							email: email.toProper(),
-							phone,
-							rating,
-							feedback_text: cust[0].feedback_text,
-							activity: activity.active,
-							ogInfo: cust[0],
-							loading: false,
-						});
+			if (browser.name !== 'chrome') {
+				this.notChrome();
+			} else {
+				if (this.props.location.state.focus_cust[0]) {
+					if (this.props.location.state.focus_cust[0].cor_id === parseInt(cor_id)) {
+						let cust = this.props.location.state.focus_cust.filter(e => e.cus_id === parseInt(cust_id));
+						if (cust[0]) {
+							let { first_name, last_name, email, phone, activity, rating } = cust[0];
+							this.settingState({ first_name, last_name, email, phone, activity, rating, item, cust });
+						} else {
+							// GET CUSTOMERS
+							console.log('Get');
+							await this.getCust(parseInt(cor_id));
+						}
 					} else {
+						console.log('Get 1');
 						// GET CUSTOMERS
 						await this.getCust(parseInt(cor_id));
 					}
 				} else {
+					console.log('Get 2');
 					// GET CUSTOMERS
 					await this.getCust(parseInt(cor_id));
 				}
-			} else {
-				// GET CUSTOMERS
-				await this.getCust(parseInt(cor_id));
 			}
 		}
+	}
+	async notChrome() {
+		let { client_id, cor_id } = this.props.match.params;
+		let getCust = async comp => {
+			let cust = await axios.get(`/api/indv/comp/customers/${client_id}`, { cancelToken: this.axiosCancelSource.token });
+			if (cust.data.msg === 'GOOD') {
+				let cus = cust.data.info.filter(e => e.cus_id === parseInt(this.props.match.params.cust_id));
+				console.log(cus[0]);
+				if (cus[0]) {
+					let { first_name, last_name, email, phone, activity, rating } = cus[0];
+					await this.settingState({ item: comp, cust: cus, first_name, last_name, email, phone, activity, rating });
+				}
+			} else {
+				await this.settingState(comp, []);
+			}
+		};
+		let getComp = async () => {
+			let comp = await axios.get(`/api/home/info/${cor_id}`, { cancelToken: this.axiosCancelSource.token });
+			this.props.location.state.info = comp.data.info;
+			this.props.history.replace(this.props.location.pathname, this.props.location.state);
+		};
+		if (Array.isArray(this.props.location.state.info)) {
+			let item = this.props.location.state.info.filter(e => e.c_id === parseInt(client_id));
+			if (item[0]) {
+				// GET CUSTOMERS
+				this.setState({ bus: item });
+				await getCust(item);
+			} else {
+				// GET COMPANY
+				await getComp();
+			}
+		} else {
+			await getComp();
+		}
+	}
+	settingState({ first_name, last_name, email, phone, activity, rating, item, cust }) {
+		document.title = `${first_name} ${last_name} - ${item[0].company_name}`;
+		phone = phone ? phone : 'N/A';
+		this.setState({
+			firstName: first_name.toProper(),
+			lastName: last_name.toProper(),
+			email: email.toProper(),
+			phone,
+			rating,
+			feedback_text: cust[0].feedback_text,
+			activity: activity.active,
+			ogInfo: cust[0],
+			loading: false,
+		});
 	}
 	componentWillUnmount() {
 		this.axiosCancelSource.cancel('Component unmounted.');
@@ -269,7 +316,7 @@ class CustView extends Component {
 									{rating !== 0 && rating !== null ? (
 										<blockquote>
 											<h5 style={{ textAlign: 'center' }}>
-												Rating<b style={{ color: rating >= 4 ? 'Green' : rating === 3 ? 'Yellow' : 'Red', marginLeft: '25%' }}>{rating}</b>
+												Rating:<b style={{ color: 'black', marginLeft: '15%' }}>{rating}</b>
 											</h5>
 										</blockquote>
 									) : null}
@@ -277,7 +324,7 @@ class CustView extends Component {
 										<h5>Feedback History</h5>
 									</blockquote>
 									<div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxHeight: '18vh', paddingTop: '5%' }}>
-										<div style={{ overflow: 'scroll', maxHeight: '25vh', width: '95%' }} className="scrollNone">
+										<div style={{ overflow: 'scroll', maxHeight: '20vh', width: '95%' }} className="scrollNone">
 											{activity
 												.sort((a, b) => (a.date >= b.date ? 1 : -1))
 												.map((activity, i) => {
@@ -293,7 +340,7 @@ class CustView extends Component {
 										{/* <hr /> */}
 									</div>
 									{feedback_text !== 'N/A' && typeof feedback_text !== 'undefined' && feedback_text !== 'NA' && feedback_text !== null ? (
-										<div style={{ width: '30vw' }} className="noOverFlow">
+										<div style={{ width: '30vw', marginTop: '10%' }} className="noOverFlow">
 											<blockquote>
 												<h5>Direct Feedback</h5>
 											</blockquote>

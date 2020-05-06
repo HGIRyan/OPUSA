@@ -51,6 +51,7 @@ class GMBPost extends Component {
 				<div key={i} style={{ width: '80vw', height: '5vh', display: 'flex', alignItems: 'center', justifyContent: 'space-around' }} className="card">
 					<h6 style={{ width: '15%', textAlign: 'left' }}>{e.location_id}</h6>
 					<h6 style={{ width: '35%', textAlign: 'left' }}>{e.location_name}</h6>
+					<h6 style={{ width: '35%', textAlign: 'left' }}>{e.address?.locality}</h6>
 					<input
 						style={inStyle}
 						value={e.c_id}

@@ -59,7 +59,7 @@ if (PROD) {
 		}),
 	);
 }
-app.use(async function(req, res, next) {
+app.use(async function (req, res, next) {
 	if (DEV) {
 		let db = req.app.get('db');
 		// await Auth.loginBypass(db, req, next);
@@ -70,7 +70,7 @@ app.use(async function(req, res, next) {
 		next();
 	}
 });
-massive(DB_CONNECTION_STRING).then(async db => {
+massive(DB_CONNECTION_STRING).then(async (db) => {
 	await app.set('db', db);
 	// *** IM LISTENING! *** //
 	await app.listen(SERVER_PORT, () => {
@@ -112,6 +112,7 @@ app.post('/api/google/place/search', Google.Search);
 app.post('/api/google/place/placeid/details', Google.Details);
 app.post('/api/gmb/update/label', Update.gmbLabel);
 app.post('/api/gmb/post', Google.posts);
+app.post('/api/gmb/pastmonth', Google.updatePastMonthInsights);
 
 // EMAIL RECORD
 app.post('/api/record/email/:type', Record.record);
@@ -121,6 +122,7 @@ app.post('/api/record/reviews/click-site', Record.siteClick);
 // Defaults
 app.get('/api/default/:industry', Create.addDefaults);
 // HOME PAGE ENDPOINTS
+app.get('/api/home/info/:cor_id', Info.HomePageInfo);
 app.get('/api/home/info', Info.HomePageInfo);
 app.get('/api/home/dropinfo', Info.DropInfo);
 app.post('/api/reviewreport/data', Info.Reviews);
@@ -130,6 +132,7 @@ app.post('/api/typereport/indv/data/', Info.IndvAddon);
 
 // Defaults
 app.get('/api/get/default/:type/:name', Info.TypeDefaults);
+app.get('/api/get/:type/defaults', Info.getTypeDefaults);
 app.post('/api/update/default', Info.UpdateDefaults);
 app.post('/api/update/review/landingpage', Update.updateReviewLandingPage);
 
@@ -155,6 +158,7 @@ app.post('/api/update/logolink', Update.updateLogoLink);
 app.post('/api/add-new-user/dev', Create.newUser);
 app.post('/api/upload-customers', Create.uploadCustomer);
 app.get('/api/indv/customers/:id', Info.CustomerInfo);
+app.get('/api/indv/comp/customers/:id', Info.CompCustomerInfo);
 app.get('/api/indv/:cust_id/customers', Info.SingleCustomer);
 app.post('/api/update/customerinfo', Info.updateCustomer);
 app.post('/api/update/splitlist', Update.splitList);
@@ -187,12 +191,15 @@ app.post('/api/getgatherupcustomer', Migration.recordFeedback);
 app.post('/api/update/api', Migration.updateAPI);
 app.post('/api/migration/update/api', Migration.updateAPIs);
 // ManualSync
-app.post('/api/sync/salesforce', Update.syncSalesForce);
+if (process.env.REACT_APP_SF_SECURITY_TOKEN) {
+	app.post('/api/sync/salesforce', Update.syncSalesForce);
+	app.get('/api/salesforce/test', Migration.SFTest);
+	app.get('/api/salesforce/login', Migration.SFLogin);
+}
 app.post('/api/update/sf_api', Update.syncSF);
 app.post('/api/sync/gatherup', Update.syncGatherup);
+app.post('/api/sync/internal', Update.syncInternal);
 // DEV TEST
-app.get('/api/salesforce/test', Migration.SFTest);
-app.get('/api/salesforce/login', Migration.SFLogin);
 // Documents
 
 app.get('/api/doc/get/indv/reviewReport/:name', Documents.getindvReviewReport);
@@ -424,7 +431,7 @@ if (!DEV && PROD) {
 	cron.scheduleJob('15 03 06 * * 7', async () => {
 		// NEW Facebook Ratings
 		let allComp = await app.get('db').info.all_record_business([]);
-		allComp = allComp.filter(e => e.review_links.links.some(el => el.site === 'Facebook') && e.active_prod.reviews);
+		allComp = allComp.filter((e) => e.review_links.links.some((el) => el.site === 'Facebook') && e.active_prod.reviews);
 		let amt = 30;
 		console.log(
 			`Counting New FaceBook Reviews for ${allComp.length} companies at ${amt} per interval taking ${Math.ceil(
@@ -452,6 +459,12 @@ if (!DEV && PROD) {
 			}, 5000 * i);
 		}
 	});
+	cron.scheduleJob('55 02 14 * * 1', async () => {
+		// Send Depleated Lists
+		let allComp = await app.get('db').info.all_record_business([]);
+		let am = JSON.parse(process.env.REACT_APP_ACCOUNT_MANAGERS).am;
+		Record.depletedEmails(allComp, am);
+	});
 	// =========================================
 	// SCHEDULED SEND REPORTS
 	// =========================================
@@ -459,6 +472,7 @@ if (!DEV && PROD) {
 		// PERFORMANCE REPORT
 		let offset = '-420';
 		// SYNCING WITH SALESFORCE
+		// For account status = 'cancelled' have it deactivate from lilo
 		// await Recurring.syncSF(app);
 	});
 	cron.scheduleJob('55 25 10 * * 7', async () => {
@@ -466,24 +480,25 @@ if (!DEV && PROD) {
 		// Get Account Manager
 	});
 } else {
+	cron.scheduleJob('* * * * * *', async () => {});
 }
 
 // =========================================
 // Prototypes
 // =========================================
-String.prototype.toProper = function() {
+String.prototype.toProper = function () {
 	let str = this;
 	if (typeof str.split("'")[0] === 'string') {
-		return str.replace(/\w\S*/g, function(txt) {
+		return str.replace(/\w\S*/g, function (txt) {
 			return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 		});
 	}
 };
-Array.prototype.push2 = function(x) {
+Array.prototype.push2 = function (x) {
 	this.push(x);
 	return this;
 };
-String.prototype.emailValidate = function() {
+String.prototype.emailValidate = function () {
 	let str = this;
 	// eslint-disable-next-line
 	var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;

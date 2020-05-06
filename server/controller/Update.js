@@ -9,7 +9,7 @@ const {
 	CLOUDINARY_API_KEY,
 	CLOUDINARY_SECRET,
 	CLOUDINARY_NAME,
-	SF_SECURITY_TOKEN,
+	REACT_APP_SF_SECURITY_TOKEN,
 	SF_USERNAME,
 	SF_PASSWORD,
 	GATHERUP_BEARER_TOKEN,
@@ -22,7 +22,9 @@ cloudinary.config({
 });
 var jsforce = require('jsforce');
 var conn = new jsforce.Connection();
-conn.login(SF_USERNAME, SF_PASSWORD + SF_SECURITY_TOKEN, function(err, userInfo) {}); //.then(re => console.log(re));
+if (process.env.REACT_APP_VERTICLES === 'false') {
+	conn.login(SF_USERNAME, SF_PASSWORD + REACT_APP_SF_SECURITY_TOKEN, function (err, userInfo) {}); //.then(re => console.log(re));
+}
 module.exports = {
 	// DEFAULTS
 	reviewEmail: async (req, res) => {
@@ -33,7 +35,7 @@ module.exports = {
 				await req.app.get('db').update.defaults.review_email([type, emails, settings]);
 				res.status(200).send({ msg: 'GOOD', settings });
 			};
-			if (formData) {
+			if (formData.file) {
 				console.log('UPLOADING LOGO');
 				cloudinary.uploader.upload(formData.file, { width: 200 }, async (err, resp) => {
 					if (err) {
@@ -204,7 +206,7 @@ module.exports = {
 				og.auto_amt = { amt: auto };
 			}
 			if (req.session.user) {
-				req.session.user.info.map(e => (parseInt(e.c_id) === parseInt(og.c_id) ? (e = og) : null));
+				req.session.user.info.map((e) => (parseInt(e.c_id) === parseInt(og.c_id) ? (e = og) : null));
 			}
 			res.status(200).send({ msg: 'GOOD', info: og });
 		} catch (e) {
@@ -215,7 +217,7 @@ module.exports = {
 	deleteCustomer: async (req, res) => {
 		try {
 			let { selected, og } = req.body;
-			await selected.map(async e => {
+			await selected.map(async (e) => {
 				await req.app.get('db').update.delete_cust([e.c_id, e.id, false]);
 			});
 			let allCust = await req.app.get('db').info.customers.corp_cust_all([og.cor_id]);
@@ -259,7 +261,7 @@ module.exports = {
 			await db.from([c_id, from_email]);
 			// SET SESSION
 			if (req.session.user) {
-				req.session.user.info.map(e => (e = parseInt(e.c_id) === parseInt(c_id) ? req.body.og : e));
+				req.session.user.info.map((e) => (e = parseInt(e.c_id) === parseInt(c_id) ? req.body.og : e));
 			}
 			res.status(200).send({ msg: 'GOOD' });
 		} catch (e) {
@@ -272,7 +274,7 @@ module.exports = {
 			let { calls, direction, website, messages, searches, c_id } = req.body.og;
 			await req.app.get('db').update.ginsights([c_id, calls, website, direction, messages, searches]);
 			if (req.session.user.info) {
-				req.session.user.info.map(e => (e = parseInt(e.c_id) === parseInt(c_id) ? req.body.og : e));
+				req.session.user.info.map((e) => (e = parseInt(e.c_id) === parseInt(c_id) ? req.body.og : e));
 			}
 			res.status(200).send({ msg: 'GOOD' });
 		} catch (e) {
@@ -286,7 +288,7 @@ module.exports = {
 			await req.app.get('db').update.active([c_id, !active]);
 			let company = await req.app.get('db').info.specific_business([c_id]);
 			if (req.session.user.info && company[0]) {
-				req.session.user.info.map(e => (e = parseInt(e.c_id) === parseInt(c_id) ? company[0] : e));
+				req.session.user.info.map((e) => (e = parseInt(e.c_id) === parseInt(c_id) ? company[0] : e));
 			}
 			res.status(200).send({ msg: 'GOOD', company: company[0] });
 		} catch (error) {
@@ -300,7 +302,7 @@ module.exports = {
 			// let amt = { amt: parseInt(val) };
 			await req.app.get('db').update.auto_amt([c_id, amt]);
 			if (req.session.user.info) {
-				req.session.user.info.map(e => (e.auto_amt = parseInt(e.c_id) === parseInt(c_id) ? amt : e.auto_amt));
+				req.session.user.info.map((e) => (e.auto_amt = parseInt(e.c_id) === parseInt(c_id) ? amt : e.auto_amt));
 			}
 			res.status(200).send({ msg: 'GOOD', amt, c_id, cor_id });
 		} catch (error) {
@@ -310,61 +312,95 @@ module.exports = {
 	},
 	syncSalesForce: async (req, res) => {
 		try {
-			let { og } = req.body;
-			let { c_api } = req.body.og;
-			if (c_api.salesforce.sf_id) {
-				let db = req.app.get('db');
-				let info = await conn
-					.query(
-						`
-							select asset.name,asset.quantity, account.name, asset.asset_status__c, account.id, account.ownerid, account.status__c,
-							account.close_date__c from asset where asset.accountid = '${c_api.salesforce.sf_id}'`,
-						function(err, result) {
-							if (err) {
-								return console.error('This error is in the auth callback: ' + err);
-							}
-						},
-					)
-					.then(res => {
-						return res;
+			if (process.env.REACT_APP_SF_SECURITY_TOKEN) {
+				let { og } = req.body;
+				let { c_api } = req.body.og;
+				if (c_api.salesforce.sf_id) {
+					let db = req.app.get('db');
+					let info = await conn
+						.query(
+							`
+								select asset.name,asset.quantity, account.name, asset.asset_status__c, account.id, account.ownerid, account.status__c,
+								account.close_date__c from asset where asset.accountid = '${c_api.salesforce.sf_id}'`,
+							function (err, result) {
+								if (err) {
+									return console.error('This error is in the auth callback: ' + err);
+								}
+							},
+						)
+						.then((res) => {
+							return res;
+						});
+					let contact = await conn
+						.query(`select contact.name, contact.email from contact where contact.accountid = '${c_api.salesforce.sf_id}'`)
+						.then((res) => {
+							return res;
+						});
+					let accountManager;
+					let account_status;
+					let assets = [];
+					// {asset: '', quantity:'', status:''}
+					info.records.forEach((el) => {
+						let name;
+						if (el.Name.includes('inback')) {
+							name = 'winback';
+						} else if (el.Name.includes('ross')) {
+							name = 'cross_sell';
+						} else if (el.Name.includes('eview')) {
+							name = 'reviews';
+						} else if (el.Name.includes('aps')) {
+							name = 'maps';
+						} else if (el.Name.includes('leadgen')) {
+							name = 'leadgen';
+						}
+						assets.push({ asset: name, quantity: el.Quantity, status: el.Asset_Status__c });
+						account_status = el.Account.Status__c;
+						accountManager = Defaults.accountManager(el.Account.OwnerId);
+						// og.active_prod[name] = el.Asset_Status__c.toLowerCase().includes('active') ? true : false;
 					});
-				let contact = await conn.query(`select contact.name, contact.email from contact where contact.accountid = '${c_api.salesforce.sf_id}'`).then(res => {
-					return res;
-				});
-				let accountManager;
-				let account_status;
-				let assets = [];
-				// {asset: '', quantity:'', status:''}
-				info.records.forEach(el => {
-					let name;
-					if (el.Name.includes('inback')) {
-						name = 'winback';
-					} else if (el.Name.includes('ross')) {
-						name = 'cross_sell';
-					} else if (el.Name.includes('eview')) {
-						name = 'reviews';
-					} else if (el.Name.includes('aps')) {
-						name = 'maps';
-					} else if (el.Name.includes('leadgen')) {
-						name = 'leadgen';
+					og.c_api.salesforce.contact = contact.records[0];
+					og.c_api.salesforce.accountManager = accountManager;
+					og.c_api.salesforce.assets = assets;
+					let active = account_status.toLowerCase().includes('active') ? true : false;
+					// Update Company Table Row
+					if (contact.records[0]) {
+						// Update Owner Name, Owner Email
+						// Update Notification Email
+						og.owner_name.first = contact.records[0].Name.split(' ')[0];
+						og.owner_name.last = contact.records[0].Name.split(' ').slice(1, 500).join(' ');
+						let email = contact.records[0].Email.toLowerCase();
+						og.email.email = og.email.email.filter((e) => e.toLowerCase() !== email);
+						og.email.email.unshift(email);
+						og.feedback_alert.alert = og.feedback_alert.alert.filter((e) => e.to.toLowerCase() !== email);
+						og.feedback_alert.alert.unshift({ type: 'all', to: email });
+						// Update to DB
+						// Update Name and Email
+						await db.update.company_name_email([og.c_id, og.owner_name, og.email]);
+						// Update Feedback Alert
+						await db.update.feedback_alert([og.c_id, og.feedback_alert]);
 					}
-					assets.push({ asset: name, quantity: el.Quantity, status: el.Asset_Status__c });
-					account_status = el.Account.Status__c;
-					accountManager = Defaults.accountManager(el.Account.OwnerId);
-					og.active_prod[name] = el.Asset_Status__c.toLowerCase().includes('active') ? true : false;
-				});
-				og.c_api.salesforce.contact = contact.records[0];
-				og.c_api.salesforce.accountManager = accountManager;
-				og.c_api.salesforce.assets = assets;
-				let active = account_status.toLowerCase().includes('active') ? true : false;
-				// Update Company Table Row
-				await db.update.sf_company_sync([og.c_id, active, og.active_prod, og.c_api]);
-				res.status(200).send({ msg: 'GOOD', og });
+					await db.update.sf_company_sync([og.c_id, active, og.active_prod, og.c_api]);
+					res.status(200).send({ msg: 'GOOD', og });
+				} else {
+					res.status(200).send({ msg: 'GOOD', og: req.body.og });
+				}
 			}
 		} catch (e) {
 			Err.emailMsg(e, 'UPDATE/syncSalesForce');
 			res.status(200).send({ msg: `ERROR: ${e}` });
 		}
+	},
+	sfName: async (sf_id) => {
+		return await conn
+			.query(`select contact.name, contact.email from contact where contact.accountid = '${sf_id}'`, function (err, result) {
+				if (err) {
+					return console.error('This error is in the auth callback: ' + err);
+				}
+			})
+			.then((res) => {
+				res = res.records[0];
+				return res;
+			});
 	},
 	syncSF: async (sf_id, c_api) => {
 		if (sf_id) {
@@ -373,22 +409,22 @@ module.exports = {
 					`
 							select asset.name,asset.quantity, account.name, asset.asset_status__c, account.id, account.ownerid, account.status__c,
 							account.close_date__c from asset where asset.accountid = '${sf_id}'`,
-					function(err, result) {
+					function (err, result) {
 						if (err) {
 							return console.error('This error is in the auth callback: ' + err);
 						}
 					},
 				)
-				.then(res => {
+				.then((res) => {
 					return res;
 				});
-			let contact = await conn.query(`select contact.name, contact.email from contact where contact.accountid = '${sf_id}'`).then(res => {
+			let contact = await conn.query(`select contact.name, contact.email from contact where contact.accountid = '${sf_id}'`).then((res) => {
 				return res;
 			});
 			let accountManager;
 			let account_status;
 			let assets = [];
-			info.records.forEach(el => {
+			info.records.forEach((el) => {
 				let name;
 				if (el.Name.includes('inback')) {
 					name = 'winback';
@@ -420,8 +456,7 @@ module.exports = {
 			let today = moment().format('YYYY-MM-DD');
 			let db = req.app.get('db');
 			let { og } = req.body;
-			let { c_api } = req.body.og;
-			console.log(GATHERUP_BEARER_TOKEN, GATHERUP_CLIENTID);
+			let { c_api, review_links } = req.body.og;
 			var config = {
 				headers: { Authorization: 'bearer ' + GATHERUP_BEARER_TOKEN },
 			};
@@ -432,10 +467,10 @@ module.exports = {
 				aggregateResponse: 1,
 				// page: page,
 			};
-			let uploadCust = async cust => {
+			let uploadCust = async (cust) => {
 				await cust
 					// .slice( 0, 1 )
-					.forEach(async cus => {
+					.forEach(async (cus) => {
 						let emailStatus = (info, rat) => {
 							switch (info) {
 								case '1st reminder sent':
@@ -483,21 +518,21 @@ module.exports = {
 							let rating = cus.rating ? parseInt(cus.rating.split('.')[0]) : null;
 							let click = cus.statusInfo === 'Click to review site' || cus.statusInfo === 'Review received' ? true : false;
 							let noOpen = ['First Review Reminder', 'First Send', 'Second Reminder'];
-							let opened_time = !noOpen.some(e => e === status) ? '2019-12-05' : null;
-							let email_status = noOpen.some(e => e === status) ? 'delivered' : 'open';
+							let opened_time = !noOpen.some((e) => e === status) ? '2019-12-05' : null;
+							let email_status = noOpen.some((e) => e === status) ? 'delivered' : 'open';
 							await db.create.gather_feedback([newId[0].cus_id, feed_text, rating, click, email_status, opened_time, status, history]);
 						}
 					});
 				// console.log(cust.length, cust[0]);
 			};
-			await axios.post('https://app.gatherup.com/api/customers/get', bodyParams, config).then(async res => {
+			await axios.post('https://app.gatherup.com/api/customers/get', bodyParams, config).then(async (res) => {
 				let pages = res.data.pages;
 				if (pages > 1) {
 					uploadCust(res.data.data);
 					for (let i = 2; i <= pages; i++) {
 						setTimeout(async () => {
 							bodyParams.page = i;
-							await axios.post('https://app.gatherup.com/api/customers/get', bodyParams, config).then(async resp => {
+							await axios.post('https://app.gatherup.com/api/customers/get', bodyParams, config).then(async (resp) => {
 								await uploadCust(resp.data.data);
 							});
 						}, i * 1000);
@@ -505,12 +540,67 @@ module.exports = {
 				} else {
 					uploadCust(res.data.data);
 				}
+				await axios.post('https://app.gatherup.com/api/business/online-review-links/get', bodyParams, config).then(async (resp) => {
+					let facebook = '';
+					await resp.data.data.map((e) => {
+						if (e.socialLinkType === 'facebook') {
+							facebook = e.socialLinkUrl;
+						}
+					});
+					if (facebook !== '') {
+						review_links.links.push({ site: 'Facebook', link: facebook });
+						await db.update.links([og.c_id, review_links]);
+					}
+				});
 			});
 			setTimeout(() => {
 				res.status(200).send({ msg: 'GOOD' });
 			}, 1500);
 		} catch (e) {
 			Err.emailMsg(e, 'UPDATE/syncGatherup');
+			res.status(200).send({ msg: `Error: ${e}` });
+		}
+	},
+	syncInternal: async (req, res) => {
+		try {
+			let db = req.app.get('db');
+			let { og } = req.body;
+			let { c_api, c_id } = og;
+			// Get Review History
+			await axios.get(`http://internal.liftlocal.com/api/migrate/reviews/${c_api.internal}`).then(async (res) => {
+				let rev = res.data.reviews;
+				await rev
+					// .slice( 0, 1 )
+					.forEach(async (e) => {
+						let info = `${og.company_name} got ${e.ratings} reviews and has a status of ${e.status}`;
+						await db.create.review_history([c_id, e.date, e.status, e.ratings, info]);
+					});
+			});
+			// Then
+			// Sync Info With Customers
+			let gcust = await db.info.customers.corp_cust_all([og.cor_id]);
+			await axios.get(`http://internal.liftlocal.com/api/migrate/customers/${c_api.internal}`).then(async (res) => {
+				let cust = res.data.customers;
+				await gcust.forEach(async (e) => {
+					let indv = cust.filter((el) => el.customer_id === e.gather);
+					if (indv[0]) {
+						// Update Last Sent
+						await db.update.gather_last_sent([
+							indv[0].customer_id,
+							e.activity.active[e.activity.active.length - 1].type === 'Customer added' ? '2005-05-25' : indv[0].date_last_sent,
+						]);
+						// console.log(indv[0].customer_id, indv[0].date_last_sent);
+					}
+				});
+				// update customer
+				// console.log(gcust, cust);
+			});
+			let obj = { client: c_api.gatherup.client_id, businessId: c_api.gatherup.business_id };
+			await axios.post(`http://internal.liftlocal.com/api/cancel`, { obj });
+			await Defaults.custCount(req, og);
+			res.status(200).send({ msg: 'GOOD' });
+		} catch (e) {
+			Err.emailMsg(e, 'UPDATE/syncInternal');
 			res.status(200).send({ msg: `Error: ${e}` });
 		}
 	},
@@ -539,7 +629,7 @@ module.exports = {
 			let { cor_id, loc } = req.body;
 			let db = req.app.get('db');
 			let cust = await db.info.customers.corp_cust_all([parseInt(cor_id)]);
-			cust = cust.filter(e => e.active);
+			cust = cust.filter((e) => e.active);
 			let chunks = (arr, min, max) => {
 				// uncomment this line if you don't want the original array to be affected
 				// var arr = arr.slice();
@@ -557,7 +647,7 @@ module.exports = {
 			let chun = chunks(cust, Math.floor(cust.length / loc.length) - 1, Math.floor(cust.length / loc.length));
 			await chun.slice(0, loc.length).map(async (e, i) => {
 				let { c_id } = loc[i];
-				await e.map(async el => {
+				await e.map(async (el) => {
 					await db.update.customer_loc([c_id, el.cus_id]);
 				});
 			});

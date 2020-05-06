@@ -3,6 +3,10 @@
 	"version": "0.1.0",
 	"private": true,
 	"dependencies": {
+		"-": "0.0.1",
+		"@babel/cli": "^7.8.4",
+		"@babel/core": "^7.9.0",
+		"@babel/plugin-proposal-optional-chaining": "^7.9.0",
 		"@sendgrid/client": "^6.5.1",
 		"@sendgrid/mail": "^6.5.1",
 		"@types/styled-components": "^4.4.2",
@@ -13,12 +17,14 @@
 		"connect-redis": "^4.0.4",
 		"core-js": "^2.6.11",
 		"cryptr": "^4.0.2",
+		"detect-browser": "^5.0.0",
 		"dotenv": "^8.2.0",
 		"email-validator": "^2.0.4",
 		"express": "^4.17.1",
 		"express-session": "^1.17.0",
 		"file-saver": "^2.0.0",
 		"html-pdf": "^2.2.0",
+		"http-proxy-middleware": "^1.0.3",
 		"jsforce": "^2.0.0-alpha.10",
 		"jsonwebtoken": "^8.5.1",
 		"lodash": "^4.17.15",
@@ -48,13 +54,14 @@
 		"redux-promise-middleware": "^6.1.1",
 		"redux-react-session": "^2.6.0",
 		"request": "^2.88.2",
+		"save-dev": "0.0.1-security",
 		"string-similarity": "^3.0.0",
 		"styled-components": "^4.4.0",
 		"xlsx": "^0.15.5"
 	},
 	"scripts": {
 		"start": "react-scripts start",
-		"build": "react-scripts build",
+		"build": "GENERATE_SOURCEMAP=false react-scripts build",
 		"test": "react-scripts test",
 		"eject": "react-scripts eject"
 	},
@@ -83,7 +90,7 @@
 		"eslint-plugin-jsx-a11y": "^6.2.3",
 		"eslint-plugin-react": "^7.18.0",
 		"eslint-plugin-react-hooks": "^1.7.0",
-		"prettier": "^1.18.2",
+		"prettier": "^2.0.5",
 		"pretty-quick": "^1.11.1",
 		"redux-devtools-extension": "^2.13.8"
 	}

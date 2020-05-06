@@ -47,13 +47,28 @@ class Email extends Component {
 		// }
 	}
 	formatPhoneNumber(phoneNumberString) {
-		var cleaned = ('' + phoneNumberString).replace(/\D/g, '');
-		var match = cleaned.match(/^(1|)?(\d{3})(\d{3})(\d{4})$/);
-		if (match) {
-			var intlCode = match[1] ? '+1 ' : '';
-			return [intlCode, '(', match[2], ') ', match[3], '-', match[4]].join('');
+		phoneNumberString = Array.isArray(phoneNumberString) ? phoneNumberString[0] : phoneNumberString;
+		phoneNumberString = phoneNumberString.toString();
+		if (phoneNumberString && phoneNumberString.indexOf('+1') === 0) {
+			phoneNumberString = phoneNumberString.substring(2);
+			if (phoneNumberString.includes('-')) {
+				let spli = phoneNumberString.split('-').map(e => e.trim());
+				spli[0] = '(' + spli[0] + ')';
+				phoneNumberString = spli.join('-');
+			} else if (!phoneNumberString.includes(')')) {
+				let spli = phoneNumberString.split('');
+				let one = '(' + spli[0] + spli[1] + spli[2] + ')';
+				phoneNumberString = one + '-' + spli[3] + spli[4] + spli[5] + '-' + spli[6] + spli[7] + spli[8] + spli[9];
+			}
+			return phoneNumberString;
+		} else if (phoneNumberString && !phoneNumberString.includes(')')) {
+			let spli = phoneNumberString.split('');
+			let one = '(' + spli[0] + spli[1] + spli[2] + ')';
+			phoneNumberString = one + '-' + spli[3] + spli[4] + spli[5] + '-' + spli[6] + spli[7] + spli[8] + spli[9];
+			return phoneNumberString;
+		} else {
+			return phoneNumberString;
 		}
-		return null;
 	}
 	render() {
 		let body, thanks, question;
@@ -161,7 +176,7 @@ class Email extends Component {
 									style={{
 										display: 'inline-block',
 										border: 'solid black 2px',
-										borderRadius: '50%',
+										borderRadius: '50% 50%',
 										height: '50px',
 										width: '50px',
 										verticalAlign: 'middle',
@@ -169,6 +184,7 @@ class Email extends Component {
 										backgroundColor: 'rgba(255, 15, 15, .7)',
 										textDecoration: 'none',
 										color: 'black',
+										paddingTop: '.5%',
 									}}
 								>
 									<h4 style={{ margin: 0, padding: 0, marginTop: '12.5%' }}>1</h4>
@@ -187,6 +203,7 @@ class Email extends Component {
 										backgroundColor: 'rgba(255, 125, 15, .7)',
 										textDecoration: 'none',
 										color: 'black',
+										paddingTop: '.5%',
 									}}
 								>
 									<h4 style={{ margin: 0, padding: 0, marginTop: '12.5%' }}>2</h4>
@@ -205,6 +222,7 @@ class Email extends Component {
 										backgroundColor: 'rgba(255, 250, 15, 0.7)',
 										textDecoration: 'none',
 										color: 'black',
+										paddingTop: '.5%',
 									}}
 								>
 									<h4 style={{ margin: 0, padding: 0, marginTop: '12.5%' }}>3</h4>
@@ -223,6 +241,7 @@ class Email extends Component {
 										backgroundColor: 'rgba(100, 255, 15, 0.7)',
 										textDecoration: 'none',
 										color: 'black',
+										paddingTop: '.5%',
 									}}
 								>
 									<h4 style={{ margin: 0, padding: 0, marginTop: '12.5%' }}>4</h4>
@@ -241,6 +260,7 @@ class Email extends Component {
 										backgroundColor: 'rgba(25, 200, 50, 0.7)',
 										textDecoration: 'none',
 										color: 'black',
+										paddingTop: '.5%',
 									}}
 								>
 									<h4 style={{ margin: 0, padding: 0, marginTop: '12.5%' }}>5</h4>
@@ -301,7 +321,7 @@ class Email extends Component {
 								<p style={{ margin: '.25% 0', fontSize: '1em', lineHeight: '95%' }}>
 									{comp.address.state}, USA, {comp.address.zip}
 								</p>
-								<p style={{ margin: '.25% 0', fontSize: '1em', lineHeight: '95%' }}>{this.formatPhoneNumber(comp.phone.phone)}</p>
+								<p style={{ margin: '.25% 0', fontSize: '1em', lineHeight: '95%' }}>{this.formatPhoneNumber(comp.phone.phone[0])}</p>
 							</div>
 							<a href={this.props.props.location.pathname} style={{ textDecoration: 'underline', display: 'inline-block' }}>
 								<p>Unsubscribe</p>
@@ -324,7 +344,7 @@ class Email extends Component {
 									<p style={{ margin: '.5% 0', fontSize: '1em', lineHeight: '95%' }}>
 										{comp.address.state}, USA, {comp.address.zip}
 									</p>
-									<p style={{ margin: '.5% 0', fontSize: '1em', lineHeight: '95%' }}>{this.formatPhoneNumber(comp.phone.phone)}</p>
+									<p style={{ margin: '.5% 0', fontSize: '1em', lineHeight: '95%' }}>{this.formatPhoneNumber(comp.phone.phone[0])}</p>
 								</div>
 							</div>
 							<a href={this.props.props.location.pathname} style={{ textDecoration: 'underline', display: 'inline-block' }}>

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import DoubleRingSVG from './../Assets/Double Ring-3s-200px.svg';
 import DoubleRingSVGWhite from './../Assets/DoubleRingWhite.svg';
 import React from 'react';
+const { detect } = require('detect-browser');
+const browser = detect();
 export function LoadingWrapper({ text, children, loading, page, logo }) {
 	let loadingVisual = (
 		<NoDiv just="center" align="center" height="100vh" direction="column">
@@ -116,7 +118,7 @@ export const SideBarContainer = styled.div`
 	position: fixed;
 	display: flex;
 	width: ${props => (props.width ? props.width : '10vw')};
-	height: -webkit-calc(100% - 4vh);
+	${browser.name !== 'chrome' ? 'height: 95%;' : 'height: -webkit-calc(100% - 4vh);'}
 	bottom: 0;
 	/* border: solid red 2px; */
 	user-select: none;
@@ -129,7 +131,7 @@ export const ContentHolder = styled.div`
 	position: relative;
 	grid-area: content;
 	display: flex;
-	width: -webkit-calc(85%);
+	${browser.name !== 'chrome' ? 'width: 85%;' : 'width: -webkit-calc(85%);'}
 	top: 8vh;
 	left: ${props => (props.left ? props.left : '10vw')};
 	@media (max-width: 500px) {

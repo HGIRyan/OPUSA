@@ -72,6 +72,14 @@ export let getUserInfo = async () => {
 		}
 	});
 };
+export const saveToLocalStorage = state => {
+	try {
+		const serializedState = JSON.stringify(state);
+		localStorage.setItem('state', serializedState);
+	} catch (e) {
+		console.log(e);
+	}
+};
 export const pagination = (arr, current, perPage) => {
 	const indexOfLastItem = current * perPage;
 	const indexOfFirstItem = indexOfLastItem - perPage;
@@ -93,4 +101,5 @@ export default {
 	getUserInfo,
 	pagination,
 	toTitleCase,
+	saveToLocalStorage,
 };

@@ -96,7 +96,7 @@ class Header extends Component {
 			cursor: 'pointer',
 		};
 		let loc = this.props.props.props.location.pathname;
-		let admin = ['/migration', '/user-create', '/home', '/addbusiness', '/addlocation'];
+		let admin = ['/migration', '/user-create', '/home', '/addbusiness', '/addlocation', '/default'];
 		return (
 			<div className="row tertiary-color" style={{ width: '100vw', height: '100%' }}>
 				<div
@@ -195,13 +195,18 @@ class Header extends Component {
 								<h6 style={dropStyle}>Account Details</h6>
 							</DefaultLink>
 						) : null}
+						{(perm === 'admin' || sub.real === 'admin') && sub.c ? (
+							<DefaultLink to={{ pathname: `/HighLevelAnal`, state: User }} style={dropStyle} className="hoverable">
+								<h6 style={dropStyle}>High Level Anal</h6>
+							</DefaultLink>
+						) : null}
 						{(perm === 'admin' || sub.real === 'admin') && !admin.some(e => loc.includes(e)) ? (
 							<h6 style={dropStyle} onClick={() => this.toggleReportingMode()} className="hoverable">
 								Reporting Mode
 							</h6>
 						) : null}
 						{perm === 'admin' ? (
-							<DefaultLink to={{ pathname: `/home/gmb/details`, state: User }} style={dropStyle} className="hoverable">
+							<DefaultLink to={{ pathname: `/gmb/details`, state: User }} style={dropStyle} className="hoverable">
 								<h6 style={dropStyle}>GMB Details Search</h6>
 							</DefaultLink>
 						) : null}
@@ -211,7 +216,7 @@ class Header extends Component {
 						{perm === 'admin' ? (
 							<NoDiv direction="column" align="center" style={{ width: '100%' }}>
 								<Divider />
-								<DefaultLink to={{ pathname: '/home/NA/defaults', state: User }} style={dropStyle} className="hoverable">
+								<DefaultLink to={{ pathname: '/default/NA', state: User }} style={dropStyle} className="hoverable">
 									<h6 style={dropStyle}>All Defaults</h6>
 								</DefaultLink>
 								<h6
@@ -237,8 +242,8 @@ class Header extends Component {
 									{this.state.corporate
 										? User.industry.map(e => {
 												return (
-													<DefaultLink key={e.industry} to={{ pathname: `/home/${e.industry}/defaults`, state: User }} style={dropStyle} className="hoverable">
-														<h6 style={dropStyle}>{e.industry}</h6>
+													<DefaultLink key={e.industry} to={{ pathname: `/default/${e.industry}`, state: User }} style={dropStyle} className="hoverable">
+														<h6 style={dropStyle}>{e.industry.toProper()}</h6>
 													</DefaultLink>
 												);
 										  })

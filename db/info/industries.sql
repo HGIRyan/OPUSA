@@ -1,1 +1,1 @@
-select distinct industry from defaults;
+select distinct lower(industry) as industry from company order by industry;

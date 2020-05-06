@@ -1,27 +1,46 @@
 // Imports
 const Moment = require('moment');
-let { DEV } = process.env;
+let { DEV, server_link } = process.env;
 DEV = DEV.toLowerCase() === 'true' ? true : false;
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr('SECRET_CRYPTR');
 const Err = require('./Error');
 const pdf = require('html-pdf');
 const sendEmail = require('./Mail/Reviews');
+const fs = require('fs');
 
 module.exports = {
 	indvReviewReport: async (req, res) => {
 		try {
-			let { promoters, demoters, passives, reviews, responses, og, startDate, endDate } = req.body;
-			await pdf
-				.create(module.exports.indvReviewReportHTML({ promoters, demoters, passives, reviews, responses, og, startDate, endDate }), {})
-				.toFile(`${__dirname}/Review_Report.pdf`, (err, e) => {
-					if (err) {
-						res.status(200).send(Promise.reject());
-					}
-					setTimeout(() => {
-						res.status(200).send({ msg: 'GOOD' });
-					}, 1000);
+			let { promoters, demoters, passives, reviews, responses, og, startDate, endDate, reportType } = req.body;
+			if (reportType === 'pdf') {
+				await pdf
+					.create(module.exports.indvReviewReportHTML({ promoters, demoters, passives, reviews, responses, og, startDate, endDate }), {})
+					.toFile(`${__dirname}/Review_Report.pdf`, (err, e) => {
+						if (err) {
+							res.status(200).send(Promise.reject());
+						}
+						setTimeout(() => {
+							res.status(200).send({ msg: 'GOOD' });
+						}, 1000);
+					});
+			} else if (reportType === 'csv') {
+				const writeStream = fs.createWriteStream(`${__dirname}/CSV_Report.csv`);
+				writeStream.write(
+					`Customer_Id, First Name, Last Name, Email, Rating, Feedback, Recieved, Site Clicked, Unsubscribe, Activity, Last Sent, Last Email \n`,
+				);
+				req.body.all.forEach((e) => {
+					let { first_name, last_name, email, last_sent, activity, date_added, active, feedback_text, rating, click_site, last_email, opened_time } = e;
+					writeStream.write(
+						`${e.cus_id}, ${first_name}, ${last_name}, ${email}, ${rating ? rating : ''}, ${feedback_text && feedback_text !== 'N/A' ? feedback_text : ''}, ${
+							opened_time ? opened_time : ''
+						}, ${click_site ? click_site : ''}, ${active ? '' : 'Unsubscribed'}, ${JSON.stringify(activity.active).replace(/,/g, '-')}, ${
+							last_sent === '2005-05-25' ? 'NOT SENT' : last_sent
+						}, ${last_email ? last_email : ''} \n`,
+					);
 				});
+				res.status(200).send({ msg: 'GOOD' });
+			}
 		} catch (e) {
 			Err.emailMsg(e, 'Documents/indvReviewReport');
 			res.status(200).send({ msg: `BAD: ${e}` });
@@ -30,7 +49,11 @@ module.exports = {
 	getindvReviewReport: async (req, res) => {
 		try {
 			let { name } = req.params;
-			res.status(200).sendFile(`${__dirname}/Review_Report.pdf`);
+			if (name === 'pdf') {
+				res.status(200).sendFile(`${__dirname}/Review_Report.pdf`);
+			} else if (name === 'csv') {
+				res.status(200).sendFile(`${__dirname}/CSV_Report.csv`);
+			}
 			// res.sendStatus(200);
 		} catch (error) {
 			Err.emailMsg(error, 'Documents/getindvReviewReport');
@@ -39,15 +62,15 @@ module.exports = {
 	},
 	emailIndvReviewReport: async (req, res) => {
 		try {
-			let { og, emailTo, emailMessage } = req.body;
+			let { og, emailTo, emailMessage, reportType } = req.body;
 			let { c_api } = og;
-			let pdf = `${__dirname}/Review_Report.pdf`;
-			let content = require('fs')
-				.readFileSync(pdf)
-				.toString('base64');
-			let from = c_api.salesforce.sf_id
-				? { email: c_api.salesforce.accountManager.email, name: `${c_api.salesforce.accountManager.name} @ ${process.env.REACT_APP_COMPANY_NAME}` }
-				: { email: `manager@${process.env.REACT_APP_COMPANY_EXTENSION}.com`, name: process.env.REACT_APP_COMPANY_NAME };
+			let file = reportType === 'pdf' ? `${__dirname}/Review_Report.pdf` : `${__dirname}/CSV_Report.csv`;
+			let content = require('fs').readFileSync(file).toString('base64');
+			let from = process.env.REACT_APP_SF_SECURITY_TOKEN
+				? c_api.salesforce.sf_id
+					? { email: c_api.salesforce.accountManager.email, name: `${c_api.salesforce.accountManager.name} @ ${process.env.REACT_APP_COMPANY_NAME}` }
+					: { email: `manager@${process.env.REACT_APP_COMPANY_EXTENSION}.com`, name: process.env.REACT_APP_COMPANY_NAME }
+				: `manager@${process.env.REACT_APP_COMPANY_EXTENSION}.com`;
 			let email = [
 				{
 					to: {
@@ -59,7 +82,10 @@ module.exports = {
 					subject: `${process.env.REACT_APP_COMPANY_NAME} Performance Report`,
 					text: `${emailMessage}`,
 					html: `${emailMessage}`,
-					attachments: [{ filename: 'Report.pdf', content, type: 'application/pdf', disposition: 'attachment' }],
+					attachments:
+						reportType === 'pdf'
+							? [{ filename: 'Report.pdf', content, type: 'application/pdf', disposition: 'attachment' }]
+							: [{ filename: 'Report.csv', content, type: 'csv', disposition: 'attachment' }],
 					category: ['report', 'reviews', 'manual', og.c_id.toString()],
 				},
 			];
@@ -72,7 +98,7 @@ module.exports = {
 	indvReviewReportHTML: ({ promoters, demoters, passives, reviews, responses, og, startDate, endDate }) => {
 		let gRating = reviews[reviews.length - 1].rating;
 		let llRating = reviews[reviews.length - 1].llrating;
-		thisMonth = reviews => {
+		thisMonth = (reviews) => {
 			if (Array.isArray(reviews)) {
 				let weeks = parseInt(30 / 7) + 1;
 				// reviews = reviews.slice(reviews.length - weeks, reviews.length - 1);
@@ -94,7 +120,7 @@ module.exports = {
 				promPerc = promPerc + num;
 			}
 		}
-		style = arr => {
+		style = (arr) => {
 			if (arr[0]) {
 				let type = arr[0].rating;
 				return arr
@@ -118,7 +144,7 @@ module.exports = {
 				return '';
 			}
 		};
-		displayStars = rating => {
+		displayStars = (rating) => {
 			rating = typeof rating === 'number' ? rating.toFixed(1) : parseFloat(rating).toFixed(1);
 			rating = rating.toString();
 			let int = rating.split('.')[0];
@@ -132,7 +158,7 @@ module.exports = {
 			}
 			return stars
 				.map(
-					e =>
+					(e) =>
 						`<img
 						src="${e.link}"
 						alt="Star Ratings"
@@ -490,27 +516,9 @@ module.exports = {
                         ${
 													og.reviews
 														? Array.isArray(promoters) && Array.isArray(passives) && Array.isArray(demoters)
-															? promoters.filter(
-																	e =>
-																		Moment(e.last_sent).format('x') >=
-																		Moment()
-																			.subtract(1, 'month')
-																			.format('x'),
-															  ).length +
-															  passives.filter(
-																	e =>
-																		Moment(e.last_sent).format('x') >=
-																		Moment()
-																			.subtract(1, 'month')
-																			.format('x'),
-															  ).length +
-															  demoters.filter(
-																	e =>
-																		Moment(e.last_sent).format('x') >=
-																		Moment()
-																			.subtract(1, 'month')
-																			.format('x'),
-															  ).length
+															? promoters.filter((e) => Moment(e.last_sent).format('x') >= Moment().subtract(1, 'month').format('x')).length +
+															  passives.filter((e) => Moment(e.last_sent).format('x') >= Moment().subtract(1, 'month').format('x')).length +
+															  demoters.filter((e) => Moment(e.last_sent).format('x') >= Moment().subtract(1, 'month').format('x')).length
 															: ''
 														: null
 												}</h5>

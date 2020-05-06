@@ -389,7 +389,7 @@ module.exports = {
 					}
 				});
 		};
-		let { location_id, verified, location_name } = req.body.e;
+		let { location_id, verified, location_name, city } = req.body.e;
 		let insightobj = { insights: [] };
 		for (let i = 17; i > 0; i--) {
 			setTimeout(async () => {
@@ -407,12 +407,111 @@ module.exports = {
 					await insightobj.insights.push(dat);
 				}
 				if (i === 17) {
-					await req.app.get('db').gmb.new_insights_account([location_id, location_name, verified, insightobj]);
+					// console.log(city);
+					await req.app.get('db').gmb.new_insights_account([location_id, location_name, verified, insightobj, city]);
 					let accounts = await req.app.get('db').gmb.all_accounts([]);
 					await res.status(200).send({ msg: 'GOOD', info: accounts });
 				}
 			}, 1000 * i);
 		}
+	},
+	monthInsights: async ({ location_id, startTime, endTime, token }) => {
+		return await axios
+			.post(
+				`https://mybusiness.googleapis.com/v4/accounts/${AccountID}/locations:reportInsights`,
+				{
+					locationNames: [`accounts/${AccountID}/locations/${location_id}`],
+					basicRequest: {
+						metricRequests: [
+							{
+								metric: 'VIEWS_SEARCH',
+							},
+							{
+								metric: 'ACTIONS_PHONE',
+							},
+							{
+								metric: 'ACTIONS_WEBSITE',
+							},
+							{
+								metric: 'QUERIES_DIRECT',
+							},
+							{
+								metric: 'QUERIES_INDIRECT',
+							},
+							{
+								metric: 'QUERIES_CHAIN',
+							},
+						],
+						timeRange: {
+							startTime,
+							endTime,
+						},
+					},
+				},
+				{
+					headers: {
+						Authorization: `Bearer ${token}`,
+						accept: 'application/json',
+					},
+				},
+			)
+			.then(res => {
+				if (res.data.locationMetrics) {
+					let data = res.data.locationMetrics[0].metricValues;
+					let website = data.filter(e => e.metric === 'ACTIONS_WEBSITE');
+					let calls = data.filter(e => e.metric === 'ACTIONS_PHONE');
+					let direct = data.filter(e => e.metric === 'QUERIES_DIRECT');
+					let indirect = data.filter(e => e.metric === 'QUERIES_INDIRECT');
+					let chain = data.filter(e => e.metric === 'QUERIES_CHAIN');
+					let views = data.filter(e => e.metric === 'VIEWS_SEARCH');
+					website = website[0] ? website[0].totalValue.value : null;
+					calls = calls[0] ? calls[0].totalValue.value : null;
+					direct = direct[0] ? direct[0].totalValue.value : null;
+					indirect = indirect[0] ? indirect[0].totalValue.value : null;
+					views = views[0] ? views[0].totalValue.value : null;
+					chain = chain[0] ? chain[0].totalValue.value : null;
+					return {
+						website,
+						calls,
+						direct,
+						indirect,
+						chain,
+						views,
+						total: parseInt(direct) + parseInt(indirect) + parseInt(chain),
+						range: { startTime, endTime },
+					};
+				} else {
+					return null;
+				}
+			});
+	},
+	updatePastMonthInsights: async (req, res) => {
+		let { token } = req.body;
+		// Set Dates for First of last month and first of this month
+		let startTime = moment()
+			.subtract(1, 'month')
+			.date(1)
+			.format();
+		let endTime = moment()
+			.date(1)
+			.format();
+		// Get all insights
+		let accounts = await req.app.get('db').gmb.all_accounts([]);
+		accounts = accounts.filter(e => e.insights).filter(e => e.insights.insights[0]);
+		for (let i = 0; i < accounts.length; i++) {
+			setTimeout(async () => {
+				let { insights, location_id, location_name } = accounts[i];
+				let data = await module.exports.monthInsights({ location_id, startTime, endTime, token });
+				await insights.insights.push(data);
+				insights.insights = insights.insights.filter(
+					(value, index, self) => self.map(x => x.range.startTime.split('T')[0]).indexOf(value.range.startTime.split('T')[0]) === index,
+				);
+				await req.app.get('db').gmb.update_insights([location_id, insights]);
+			}, i * 500);
+		}
+		setTimeout(() => {
+			res.status(200).send({ msg: 'GOOD' });
+		}, accounts.length * 500);
 	},
 	posts: async (req, res) => {
 		try {

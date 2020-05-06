@@ -28,19 +28,38 @@ module.exports = {
 	},
 	resetSession: async (req, res) => {
 		try {
-			// console.log('RESETING SESSION START');
 			let { cor_id } = req.params;
-			if (req.session.user) {
+			if (process.env.DEV === 'true') {
 				let db = req.app.get('db');
+				let userName = 'dev';
+				let loginInfo = await db.info.login([userName]);
 				let info = await db.info.all_business([]);
 				let industry = await db.info.industries([]);
-				req.session.user.info = info;
-				req.session.user.industry = industry;
-				req.session.user.focus_cust = cor_id !== 'false' ? await db.info.customers.corp_cust_all([cor_id]) : [];
+				req.session.user = {
+					user: true,
+					email: loginInfo[0].email,
+					userName: loginInfo[0].username,
+					userInfo: loginInfo[0],
+					permissions: loginInfo[0].permission,
+					sub_perm: loginInfo[0].sub_perm,
+					industry,
+					info,
+					expires: moment(req.session.cookie.expires).format('x'),
+				};
 				res.status(200).send({ msg: 'GOOD', session: req.session.user });
-				// console.log('RESETING SESSION END');
 			} else {
-				console.log('BRUH THERE AINT NO SESSION');
+				if (req.session.user) {
+					let db = req.app.get('db');
+					let info = await db.info.all_business([]);
+					let industry = await db.info.industries([]);
+					req.session.user.info = info;
+					req.session.user.industry = industry;
+					req.session.user.focus_cust = cor_id !== 'false' ? await db.info.customers.corp_cust_all([cor_id]) : [];
+					res.status(200).send({ msg: 'GOOD', session: req.session.user });
+				} else {
+					res.status(200).send({ msg: 'BAD', session: {} });
+					console.log('BRUH THERE AINT NO SESSION');
+				}
 			}
 		} catch (e) {
 			Err.emailMsg(e, 'Authentication/resetSession');
@@ -190,11 +209,33 @@ module.exports = {
 		}
 	},
 	newPass: async (req, res) => {
-		let { newPass, info } = req.body;
-		let pass = Default.newPass(newPass);
-		if (pass) {
-			await req.app.get('db').auth.new_pass([info.user_id, pass]);
-			res.status(200).send({ msg: 'GOOD' });
+		let { newPass, info, password, userName, newAccount } = req.body;
+		if (newAccount) {
+			info = await req.app.get('db').info.login([userName]);
+			info = info[0];
+		}
+		if (info) {
+			let pass = Default.newPass(newPass);
+			if (pass) {
+				await req.app.get('db').auth.new_pass([info.user_id, pass]);
+				res.status(200).send({ msg: 'GOOD' });
+			}
+		} else {
+			let loginInfo = await req.app.get('db').info.login([userName]);
+			if (!loginInfo[0]) {
+				//If the username does not exist
+				res.status(200).send({ msg: "Username or Email doesn't Exist" });
+			} else {
+				let pass = loginInfo[0].hash_pass;
+				let compare = bcrypt.compareSync(password, pass);
+				if (compare) {
+					pass = Default.newPass(newPass);
+					await req.app.get('db').auth.new_pass([loginInfo[0].user_id, pass]);
+					res.status(200).send({ msg: 'GOOD' });
+				} else {
+					res.status(200).send({ msg: 'There was an Error' });
+				}
+			}
 		}
 	},
 	updateLoginInfo: async (req, res) => {

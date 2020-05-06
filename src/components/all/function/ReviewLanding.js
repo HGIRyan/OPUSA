@@ -51,6 +51,10 @@ class ReviewLandingPage extends Component {
 		let siteLogos = site => {
 			if (site === 'Google') {
 				return process.env.REACT_APP_GOOGLE_LOGO;
+			} else if (site === 'Facebook') {
+				return process.env.REACT_APP_FACEBOOK_LOGO;
+			} else if (site === 'Trustpilot') {
+				return process.env.REACT_APP_TRUSTPILOT_LOGO;
 			}
 		};
 		return (
@@ -131,6 +135,10 @@ class ReviewLandingPage extends Component {
 									let siteLogos = site => {
 										if (site === 'Google') {
 											return process.env.REACT_APP_GOOGLE_LOGO;
+										} else if (site === 'Facebook') {
+											return process.env.REACT_APP_FACEBOOK_LOGO;
+										} else if (site === 'Trustpilot') {
+											return process.env.REACT_APP_TRUSTPILOT_LOGO;
 										}
 									};
 									return (

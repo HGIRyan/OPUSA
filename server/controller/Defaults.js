@@ -7,14 +7,14 @@ const ll = 'YYYY-MM-DD';
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr('SECRET_CRYPTR');
 const Err = require('./Error');
-const { SF_SECRET, SF_SECURITY_TOKEN, SF_USERNAME, SF_PASSWORD } = process.env;
+const { SF_SECRET, REACT_APP_SF_SECURITY_TOKEN, SF_USERNAME, SF_PASSWORD } = process.env;
 var jsforce = require('jsforce');
 // const Mail = require('./Mail/Reviews');
 // TIME FUNCTIONS
 // ==============================================================
 // SORTING DATES
 // Sorting Functiojn takes in array of dates and returns the dates sorted from oldest to newest
-let dateSorting = arr => {
+let dateSorting = (arr) => {
 	if (Array.isArray(arr)) {
 		return arr.sort((a, b) => new Moment(a).format('YYYYMMDD') - new Moment(b).format('YYYYMMDD'));
 	} else {
@@ -23,50 +23,29 @@ let dateSorting = arr => {
 };
 // For Moment Functions some take in nothing and return formatted date. Time is a number to be added or subtracted. Day is the day of the week 0 is previous sunday and 7 is next sunday
 let today = () => Moment().format(ll);
-let saturday = () =>
-	Moment()
-		.day(-1)
-		.format(ll);
-let sunday = () =>
-	Moment()
-		.day(0)
-		.format(ll);
-let customAdd = time =>
-	typeof time === 'number'
-		? Moment()
-				.add(time, 'days')
-				.format(ll)
-		: 'Input is Not Number';
-let customSub = time =>
-	typeof time === 'number'
-		? Moment()
-				.subtract(time, 'days')
-				.format(ll)
-		: 'Input is Not Number';
-let customIso = day =>
-	typeof time === 'number'
-		? Moment()
-				.isoWeekday(day)
-				.format(ll)
-		: 'Input is Not Number';
+let saturday = () => Moment().day(-1).format(ll);
+let sunday = () => Moment().day(0).format(ll);
+let customAdd = (time) => (typeof time === 'number' ? Moment().add(time, 'days').format(ll) : 'Input is Not Number');
+let customSub = (time) => (typeof time === 'number' ? Moment().subtract(time, 'days').format(ll) : 'Input is Not Number');
+let customIso = (day) => (typeof time === 'number' ? Moment().isoWeekday(day).format(ll) : 'Input is Not Number');
 
 // ==============================================================
 // Custom Hash
-let cHash = str => {
+let cHash = (str) => {
 	try {
 		return cryptr.encrypt(str);
 	} catch (e) {
 		return null;
 	}
 };
-let cUnHash = hash => {
+let cUnHash = (hash) => {
 	try {
 		return cryptr.decrypt(hash);
 	} catch (e) {
 		return null;
 	}
 };
-let randomString = length =>
+let randomString = (length) =>
 	Math.round(Math.pow(36, length + 1) - Math.random() * Math.pow(36, length))
 		.toString(36)
 		.slice(1);
@@ -77,7 +56,7 @@ let randomString = length =>
 let checklist = () => {
 	return { list: [{ item: 'GMB Access', active: true }] };
 };
-let calls = calls => {
+let calls = (calls) => {
 	if (typeof calls === 'number' || typeof calls === 'string') {
 		return { calls: [{ calls, date: today() }] };
 	} else {
@@ -97,7 +76,7 @@ let newCalls = (calls, loc, rec) => {
 		return 'wrong DataType for Loc or Record';
 	}
 };
-let website = website => {
+let website = (website) => {
 	if (typeof website === 'number' || typeof website === 'string') {
 		return { website: [{ website, date: today() }] };
 	} else {
@@ -117,7 +96,7 @@ let newWebsite = (website, loc, rec) => {
 		return 'wrong DataType for Loc or Record';
 	}
 };
-let direction = direction => {
+let direction = (direction) => {
 	if (typeof direction === 'number' || typeof direction === 'string') {
 		return { direction: [{ direction, date: today() }] };
 	} else {
@@ -137,7 +116,7 @@ let newDirection = (direction, loc, rec) => {
 		return 'wrong DataType for Loc or Record';
 	}
 };
-let messages = messages => {
+let messages = (messages) => {
 	if (typeof messages === 'number' || typeof messages === 'string') {
 		return { messages: [{ messages, date: today() }] };
 	} else {
@@ -157,7 +136,7 @@ let newMessages = (messages, loc, rec) => {
 		return 'wrong DataType for Loc or Record';
 	}
 };
-let searches = searches => {
+let searches = (searches) => {
 	if (typeof searches === 'object') {
 		searches.date = today();
 		return { searches: [searches] };
@@ -215,7 +194,7 @@ let newReviews = (reviews, loc, rec) => {
 		return 'wrong DataType for Loc or Record';
 	}
 };
-let ranking = ranking => {
+let ranking = (ranking) => {
 	if (Array.isArray(ranking)) {
 		return { ranking: [{ ranking: [...ranking], date: today() }] };
 	} else {
@@ -235,7 +214,7 @@ let newRanking = (ranking, loc, rec) => {
 		return 'wrong DataType for Loc or Record or Ranking Array';
 	}
 };
-let rank_key = key => {
+let rank_key = (key) => {
 	if (Array.isArray(key)) {
 		return { rank_key: [...key] };
 	} else {
@@ -245,7 +224,7 @@ let rank_key = key => {
 let newRank_key = (key, loc, rec) => {
 	if (typeof rec === 'object' && typeof loc === 'number') {
 		if (rec.rank_key.length >= loc) {
-			key.map(key => {
+			key.map((key) => {
 				rec.rank_key[loc - 1].push(key);
 				return rec;
 			});
@@ -260,7 +239,7 @@ let newRank_key = (key, loc, rec) => {
 };
 // ==============================================================
 // REPORTS
-let review_links = arr => {
+let review_links = (arr) => {
 	return { links: arr };
 };
 let feedback_alert = (type, email) => {
@@ -276,7 +255,7 @@ let reportHistory = () => {
 };
 // ==============================================================
 // DEFAULTS
-let reviewEmail = email => {
+let reviewEmail = (email) => {
 	let { standard, first, opened, positive } = email;
 	if (typeof email === 'object') {
 		let obj = {
@@ -318,28 +297,28 @@ let reviewEmail = email => {
 		return 'Wrong DataType for Review Emails Default';
 	}
 };
-let leadEmail = lead => {
+let leadEmail = (lead) => {
 	if (typeof lead === 'object') {
 		let { email_1, email_2, email_3, email_4, email_5, email_6 } = lead;
 		let obj = { email_1, email_2, email_3, email_4, email_5, email_6 };
 		return obj;
 	}
 };
-let winEmail = win => {
+let winEmail = (win) => {
 	if (typeof win === 'object') {
 		let { email_1, email_2, email_3, email_4, email_5, email_6 } = win;
 		let obj = { email_1, email_2, email_3, email_4, email_5, email_6 };
 		return obj;
 	}
 };
-let crossEmail = cross => {
+let crossEmail = (cross) => {
 	if (typeof cross === 'object') {
 		let { email_1, email_2, email_3, email_4, email_5, email_6 } = cross;
 		let obj = { email_1, email_2, email_3, email_4, email_5, email_6 };
 		return obj;
 	}
 };
-let refEmail = ref => {
+let refEmail = (ref) => {
 	if (typeof ref === 'object') {
 		let { email_1, email_2, email_3, email_4, email_5, email_6 } = ref;
 		let obj = { email_1, email_2, email_3, email_4, email_5, email_6 };
@@ -558,70 +537,73 @@ let settings = {
 
 // ==============================================================
 // SETTINGS
-let auto_amt = amt => {
+let auto_amt = (amt) => {
 	if (typeof amt === 'number') {
 		return { amt };
 	} else {
 		return 'Wrong Data Type for Auto_amt default. Expected Type number';
 	}
 };
-let depleated = async e => {
+let depleated = async (e) => {
 	try {
-		let email = [
-			{
-				to: e.c_api.salesforce.accountManager.email ? e.c_api.salesforce.accountManager.email : `Ebakker@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
-				from: `rhutchison@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
-				subject: `${e.owner_name.first} @ ${e.company_name} Has Run Out Of Names`,
-				html: `
-				Hi, this is a friendly note to let you know that all your feedback requests have been sent.
-				
-				Please visit your Customer Dashboard and add some more customers so you can continue getting additional feedback and reviews!
-				
-				==> <a href='${process.env.server_link}client-dash/${e.cor_id}/upload/${e.c_id}'>Visit Your Customer Dashboard</a>
-				`,
-			},
-		];
-		// await Err.emailMsg(email, 'Defaults/Depleated');
-		if (e.c_api.salesforce) {
-			var conn = new jsforce.Connection();
-			conn
-				.login(SF_USERNAME, SF_PASSWORD + SF_SECURITY_TOKEN, function(err, userInfo) {})
-				.then(res => {
-					console.log(res.id ? 'SF Logged In' : 'SF Error');
-				});
-			await conn.sobject('Account').update(
+		if (REACT_APP_SF_SECURITY_TOKEN) {
+			let email = [
 				{
-					Id: e.c_api.salesforce.sf_id,
-					Need_Reviews_List__c: true,
+					to: e.c_api.salesforce.accountManager.email ? e.c_api.salesforce.accountManager.email : `Ebakker@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
+					from: `rhutchison@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
+					subject: `${e.owner_name.first} @ ${e.company_name} Has Run Out Of Names`,
+					html: `
+					Hi, this is a friendly note to let you know that all your feedback requests have been sent.
+					
+					Please visit your Customer Dashboard and add some more customers so you can continue getting additional feedback and reviews!
+					
+					==> <a href='${process.env.server_link}client-dash/${e.cor_id}/upload/${e.c_id}'>Visit Your Customer Dashboard</a>
+					`,
 				},
-				function(err, ret) {
-					if (err || !ret.success) {
-						return console.error(err, ret);
-					}
-				},
-			);
+			];
+			// await Err.emailMsg(email, 'Defaults/Depleated');
+			if (e.c_api.salesforce) {
+				var conn = new jsforce.Connection();
+				conn
+					.login(SF_USERNAME, SF_PASSWORD + REACT_APP_SF_SECURITY_TOKEN, function (err, userInfo) {})
+					.then((res) => {
+						console.log(res.id ? 'SF Logged In' : 'SF Error');
+					});
+				await conn.sobject('Account').update(
+					{
+						Id: e.c_api.salesforce.sf_id,
+						Need_Reviews_List__c: true,
+					},
+					function (err, ret) {
+						if (err || !ret.success) {
+							return console.error(err, ret);
+						}
+					},
+				);
+			}
 		}
 	} catch (error) {
 		Err.emailMsg(error, 'defaults/depleated');
 		console.log('ERROR defaults/depleated', error);
 	}
 };
+
 let custCount = async (req, og) => {
 	try {
 		let db = req.app.get('db');
 		let date = Moment().format('YYYY-MM-DD');
 		// GET CUSTOMERS TOTAL
 		// GET ALL WITH NO FEEDBACK
-		let lastSend = Moment()
-			.subtract(og.repeat_request.repeat, 'days')
-			.format('YYYY-MM-DD');
+		let lastSend = Moment().subtract(og.repeat_request.repeat, 'days').format('YYYY-MM-DD');
 		let total = await db.info.customers.count_comp_total([og.c_id, lastSend]);
 		let remaining = await db.info.customers.cust_remaining([og.c_id]);
 		remaining = remaining.filter(
-			e => Moment(e.last_sent).format('x') <= Moment(lastSend).format('x') || e.activity.active[e.activity.active.length - 1].type === 'Customer added',
+			(e) => Moment(e.last_sent).format('x') <= Moment(lastSend).format('x') || e.activity.active[e.activity.active.length - 1].type === 'Customer added',
 		).length;
+		let notSent = await db.record.added_not_sent([og.c_id]);
 		// console.log(remaining);
 		og.customers.reviews.push({
+			notSent: notSent[0].total,
 			size: total[0].total,
 			remaining: remaining,
 			date,
@@ -659,18 +641,21 @@ let setting_auto_amt = (cns, sum, e) => {
 					return 2;
 				} else if (cns <= 450) {
 					return Math.ceil(cns * 0.02) >= 8 ? 3 : Math.ceil(cns * 0.025);
-				} else {
+				} else if (cns <= 1000) {
 					return Math.ceil(cns * 0.03) >= 10 ? 5 : Math.ceil(cns * 0.03);
+				} else {
+					return Math.ceil(cns * 0.03) >= 15 ? 10 : Math.ceil(cns * 0.03);
 				}
 			case sum === 1:
 				if (cns <= 100) {
 					return 2;
 				} else if (cns <= 450) {
 					return Math.ceil(cns * 0.02) >= 5 ? 3 : Math.ceil(cns * 0.025);
-				} else {
+				} else if (cns <= 1000) {
 					return Math.ceil(cns * 0.03) >= 10 ? 5 : Math.ceil(cns * 0.03);
+				} else {
+					return Math.ceil(cns * 0.03) >= 15 ? 10 : Math.ceil(cns * 0.03);
 				}
-
 			case sum >= 2 && sum <= 5:
 				if (cns <= 250) {
 					return 2;
@@ -698,7 +683,7 @@ let newAuto_amt = (amt, loc, rec) => {
 		return 'Wrong Data Type for New Auto Amt Default. Expected Type Number';
 	}
 };
-let email_format = format => {
+let email_format = (format) => {
 	if (typeof format === 'number') {
 		return { s: format, fr: format, pr: format, or: format };
 	} else {
@@ -712,7 +697,7 @@ let newEmail_format = (format, loc, rec) => {
 		return 'Wrong Data Type for New Format Default. Expected Type Number';
 	}
 };
-let request_process = process => {
+let request_process = (process) => {
 	if (typeof process === 'number') {
 		return { process: [process] };
 	} else {
@@ -747,7 +732,7 @@ let newRepeat_request = (repeat, loc, rec) => {
 		return 'Wrong Data Type for New Repeat Request Default. Expected Type Number';
 	}
 };
-let first_reminder = first => {
+let first_reminder = (first) => {
 	if (typeof first === 'number') {
 		return { first: [first] };
 	} else {
@@ -761,7 +746,7 @@ let newFirst_reminder = (first, loc, rec) => {
 		return 'Wrong Data Type for New First Reminder Default. Expected Type Number';
 	}
 };
-let open_reminder = open => {
+let open_reminder = (open) => {
 	if (typeof open === 'number') {
 		return { open: [open] };
 	} else {
@@ -775,7 +760,7 @@ let newOpen_reminder = (open, loc, rec) => {
 		return 'Wrong Data Type for New Open Reminder Default. Expected Type Number';
 	}
 };
-let positive_reminder = positive => {
+let positive_reminder = (positive) => {
 	if (typeof positive === 'number') {
 		return { positive: [positive] };
 	} else {
@@ -789,7 +774,7 @@ let newPositive_reminder = (positive, loc, rec) => {
 		return 'Wrong Data Type for New Positive Default. Expected Type Number';
 	}
 };
-let logo = logo => {
+let logo = (logo) => {
 	if (typeof logo === 'string') {
 		return { logo: [logo] };
 	} else {
@@ -803,7 +788,7 @@ let newLogo = (logo, loc, rec) => {
 		return 'Wrong Data Type for New Logo Default. Expected Type String';
 	}
 };
-let accent_color = color => {
+let accent_color = (color) => {
 	if (typeof color === 'string') {
 		return { color: [color] };
 	} else {
@@ -847,31 +832,31 @@ let name = (first, last) => {
 let address = (street, city, zip, state) => {
 	return { street, city, zip, state };
 };
-let phone = num => {
+let phone = (num) => {
 	return { phone: [num] };
 };
-let email = e => {
+let email = (e) => {
 	return { email: [e] };
 };
 
 // ==============================================================
 // REVIEWEMAIL
-let standardBody = body => {
+let standardBody = (body) => {
 	return { s: body };
 };
-let firstBody = body => {
+let firstBody = (body) => {
 	return { fr: body };
 };
-let openBody = body => {
+let openBody = (body) => {
 	return { or: body };
 };
-let positiveBody = body => {
+let positiveBody = (body) => {
 	return { pr: body };
 };
-let secondReminder = body => {
+let secondReminder = (body) => {
 	return { sr: body };
 };
-let secondPositiveReminder = body => {
+let secondPositiveReminder = (body) => {
 	return { spr: body };
 };
 
@@ -897,17 +882,17 @@ let password = (lastname, zip) => {
 	let hash = bcrypt.hashSync(lastname + zip, salt);
 	return hash;
 };
-let newPass = pass => {
+let newPass = (pass) => {
 	let salt = bcrypt.genSaltSync(10);
 	let hash = bcrypt.hashSync(pass, salt);
 	return hash;
 };
-let cusHash = pass => {
+let cusHash = (pass) => {
 	let salt = bcrypt.genSaltSync(10);
 	let hash = bcrypt.hashSync(pass, salt);
 	return hash;
 };
-let mPassword = zip => {
+let mPassword = (zip) => {
 	let salt = bcrypt.genSaltSync(10);
 	let hash = bcrypt.hashSync(zip, salt);
 	return hash;
@@ -915,7 +900,7 @@ let mPassword = zip => {
 // ==============================================================
 // ==============================================================
 // SECURITY
-let sessionCheck = async req => {
+let sessionCheck = async (req) => {
 	let db = req.app.get('db');
 	if (req.session.user || DEV === 'true') {
 		if (DEV === 'true') {
@@ -936,7 +921,7 @@ let sessionCheck = async req => {
 	}
 };
 
-let indust = client => {
+let indust = (client) => {
 	let indust =
 		client === 100390
 			? 'Unassigned'
@@ -957,7 +942,7 @@ let indust = client => {
 			: 'NA';
 	return indust;
 };
-let accountManager = oid => {
+let accountManager = (oid) => {
 	// console.log(oid);
 	if (oid === '0056A000002o98TQAQ') {
 		return { name: 'Bradley Riley', email: `briley@${process.env.REACT_APP_COMPANY_EXTENSION}.com` };

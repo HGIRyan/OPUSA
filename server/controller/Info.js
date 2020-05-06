@@ -16,12 +16,14 @@ module.exports = {
 		try {
 			if (await sessionCheck(req)) {
 				let db = req.app.get('db');
-				let info = await db.info.all_business([]);
-				let industry = await db.info.industries([]);
-				if (req.session.user) {
-					req.session.user.industry = industry;
-					req.session.user.info = info;
+				let { cor_id } = req.params;
+				let info = [];
+				if (cor_id) {
+					info = await db.info.specific_corp([cor_id]);
+				} else {
+					info = await db.info.all_business([]);
 				}
+				let industry = await db.info.industries([]);
 				if (info[0]) {
 					res.status(200).send({ msg: 'GOOD', info, industry });
 				} else {
@@ -42,6 +44,19 @@ module.exports = {
 				if (req.session.user) {
 					req.session.user.focus_cust = info;
 				}
+				res.status(200).send({ info, msg: 'GOOD' });
+			} else {
+				res.status(200).send({ msg: 'NO SESSION' });
+			}
+		} catch (e) {
+			Err.emailMsg(e, 'Info/CustomerInfo');
+		}
+	},
+	CompCustomerInfo: async (req, res, next) => {
+		try {
+			if (await sessionCheck(req)) {
+				let { id } = req.params;
+				let info = await req.app.get('db').info.customers.comp_cust_all([id]);
 				res.status(200).send({ info, msg: 'GOOD' });
 			} else {
 				res.status(200).send({ msg: 'NO SESSION' });
@@ -77,7 +92,7 @@ module.exports = {
 				let updated = await req.app.get('db').update.customer([firstName, lastName, email, phone, cust_id]);
 				updated = updated[0];
 				if (req.session.user.focus_cust) {
-					req.session.user.focus_cust.map(cust => {
+					req.session.user.focus_cust.map((cust) => {
 						if (cust.id === parseInt(cust_id)) {
 							cust = updated;
 						}
@@ -183,7 +198,7 @@ module.exports = {
 			if (await sessionCheck(req)) {
 				let { type, name } = req.params;
 				let db = req.app.get('db');
-				const corpCheck = await db.info.get_single_corp([name.trim()]).catch(err => {
+				const corpCheck = await db.info.get_single_corp([name.trim()]).catch((err) => {
 					console.log('ERROR:: corpCheck', err);
 					error = true;
 				});
@@ -213,6 +228,27 @@ module.exports = {
 			}
 		} catch (e) {
 			Err.emailMsg(e, 'Info/TypeDefaults');
+		}
+	},
+	getTypeDefaults: async (req, res) => {
+		let { type, name } = req.params;
+		let db = req.app.get('db');
+		if (type !== 'NA') {
+			let defaults = await db.info.industry_defaults([type]);
+			if (req.session.user) {
+				req.session.user.defaults = defaults[0];
+			}
+			if (defaults[0]) {
+				res.status(200).send({ msg: 'GOOD', defaults: defaults[0] });
+			} else {
+				res.status(200).send({ msg: 'Bad' });
+			}
+		} else {
+			let defaults = await db.info.industry_defaults(['all']);
+			if (req.session.user) {
+				req.session.user.defaults = defaults[0];
+			}
+			res.status(200).send({ msg: 'GOOD', defaults: defaults[0] });
 		}
 	},
 	UpdateDefaults: async (req, res) => {
@@ -282,8 +318,10 @@ module.exports = {
 			} = req.body.state;
 			// console.log(req.body.state);
 			let add = { street, state: NAState, city, zip };
-			og.c_api.salesforce.sf_id = sf_id;
-			og.c_api.salesforce.accountManager.name = am;
+			if (process.env.REACT_APP_SF_SECURITY_TOKEN) {
+				og.c_api.salesforce.sf_id = sf_id;
+				og.c_api.salesforce.accountManager.name = am;
+			}
 			og.c_api.gatherup.business_id = business_id;
 			og.c_api.gatherup.client_id = client_id;
 			og.c_api.internal = agent_id;
@@ -309,7 +347,7 @@ module.exports = {
 					og.geo,
 					og.c_api,
 				])
-				.catch(err => console.log('UPDATE COMPANY ERR::', err));
+				.catch((err) => console.log('UPDATE COMPANY ERR::', err));
 			let updatePlace = await req.app.get('db').update.place_id([og.c_id, og.place_id]);
 			if (updated[0] && req.session.user && updatePlace[0]) {
 				req.session.user.info.map((item, i) => {
@@ -465,19 +503,11 @@ module.exports = {
 		let result = await axios.get(url);
 		if (result.status === 200) {
 			let html = result.data;
-			let list = html.split('<a').filter(e => e.includes('www.facebook.com') && e.includes('/url?q'));
+			let list = html.split('<a').filter((e) => e.includes('www.facebook.com') && e.includes('/url?q'));
 			if (list[0]) {
-				list = list.map(
-					e =>
-						e
-							.split('l?q=')[1]
-							.split('&amp')[0]
-							.split('/')
-							.slice(0, 4)
-							.join('/') + '/reviews',
-				)[0];
+				list = list.map((e) => e.split('l?q=')[1].split('&amp')[0].split('/').slice(0, 4).join('/') + '/reviews')[0];
 				let notAllowed = ['directory'];
-				if (!notAllowed.some(e => list.toLowerCase().includes(e.toLowerCase()))) {
+				if (!notAllowed.some((e) => list.toLowerCase().includes(e.toLowerCase()))) {
 					res.status(200).send({ msg: 'GOOD', list });
 				} else {
 					res.status(200).send({ msg: 'Couldnt Find any Facebook Pages' });

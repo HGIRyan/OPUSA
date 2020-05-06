@@ -1,26 +1,19 @@
 const axios = require('axios');
 const Default = require('./Defaults');
-const { GOOGLE_PLACE_API, SF_SECRET, SF_SECURITY_TOKEN, SF_USERNAME, SF_PASSWORD } = process.env;
+const { GOOGLE_PLACE_API, SF_SECRET, REACT_APP_SF_SECURITY_TOKEN, SF_USERNAME, SF_PASSWORD } = process.env;
 let moment = require('moment');
 var jsforce = require('jsforce');
-let security_token = 'DMXDYS2AL7GXEoG9E4cmudsTy';
-let oAuth = new jsforce.OAuth2({
-	// you can change loginUrl to connect to sandbox or prerelease env.
-	clientId: '3MVG9CEn_O3jvv0yDRMxBSY7MuDi0eZL0fIvVf9jf_LXSNv2WPsW2gvQ.7qhFr7ZTx_kzCPr1p73iKP_MQwLh',
-	clientSecret: SF_SECRET,
-	redirectUri: 'https://3f2d7a71.ngrok.io/api/salesforce/test',
-});
 module.exports = {
 	getAgents: async (req, res) => {
 		console.log('Starting');
 		let db = req.app.get('db');
-		await axios.get('http://localhost:4000/api/migrate').then(res => {
+		await axios.get('http://localhost:4000/api/migrate').then((res) => {
 			let { aData } = res.data;
 			if (Array.isArray(aData)) {
 				aData
-					.filter(e => e.name)
+					.filter((e) => e.name)
 					// .slice( 0, 50 )
-					.forEach(async e => {
+					.forEach(async (e) => {
 						let { multiple_loc, a_id, active } = e;
 
 						// await module.exports.createRows(e, db);
@@ -66,7 +59,7 @@ module.exports = {
 		let defaults = await db.info.specific_default([indust]);
 		if (!defaults[0]) {
 			// Create Defaults
-			let allD = await db.info.specific_default(['All']).catch(err => {
+			let allD = await db.info.specific_default(['All']).catch((err) => {
 				console.log('ERROR:: specific_default', a_id, err);
 				error = true;
 			});
@@ -83,7 +76,7 @@ module.exports = {
 					allD.review_landing,
 					allD.addon_landing,
 				])
-				.catch(err => {
+				.catch((err) => {
 					console.log('ERROR:: new_industry_default', a_id, err);
 					error = true;
 				});
@@ -109,13 +102,13 @@ module.exports = {
 		let active_prod = { reviews: active, cross_sell: false, referral: false, winback: false, leadgen: false };
 		let place_id = google_link !== null ? (google_link.includes('placeid') ? google_link.split('placeid=')[1] : 'N/A') : 'N/A';
 		// CREATE CORPORATION
-		const corpCheck = await db.info.get_single_corp([company_name]).catch(err => {
+		const corpCheck = await db.info.get_single_corp([company_name]).catch((err) => {
 			console.log('ERROR:: corpCheck', a_id, err);
 			error = true;
 		});
 		let corp;
 		if (!corpCheck[0]) {
-			corp = await db.create.m_corporation([indust, company_name, cor_email, a_id]).catch(err => {
+			corp = await db.create.m_corporation([indust, company_name, cor_email, a_id]).catch((err) => {
 				console.log('ERROR:: corporation', a_id, a_id, err);
 				error = true;
 			});
@@ -123,13 +116,15 @@ module.exports = {
 		} else {
 			corp = corpCheck[0];
 		}
-		let company = await db.create.business([corp.cor_id, indust, company_name, owner_name, address, phone, email, utc_offset, geo, active_prod]).catch(err => {
-			console.log('ERROR:: business', a_id, err);
-			error = true;
-		});
+		let company = await db.create
+			.business([corp.cor_id, indust, company_name, owner_name, address, phone, email, utc_offset, geo, active_prod])
+			.catch((err) => {
+				console.log('ERROR:: business', a_id, err);
+				error = true;
+			});
 		let co_id = company[0].c_id;
 		let hash = Default.mPassword(address.zip);
-		await db.create.login([co_id, cor_email, company_name, hash, 'client']).catch(err => {
+		await db.create.login([co_id, cor_email, company_name, hash, 'client']).catch((err) => {
 			console.log('ERROR:: password', a_id, err);
 			error = true;
 		});
@@ -147,7 +142,7 @@ module.exports = {
 				Default.rank_key([0]),
 				customers,
 			])
-			.catch(err => {
+			.catch((err) => {
 				console.log('ERROR:: analytics', a_id, err);
 				error = true;
 			});
@@ -162,7 +157,7 @@ module.exports = {
 				Default.feedback_alert('all', 'NO EMAIL'),
 				Default.reportHistory(),
 			])
-			.catch(err => {
+			.catch((err) => {
 				console.log('ERROR:: report_setting', a_id, err);
 				error = true;
 			});
@@ -176,7 +171,7 @@ module.exports = {
 				email_logo ? email_logo : 'N/A',
 				defaults.settings.color,
 			])
-			.catch(err => {
+			.catch((err) => {
 				console.log('ERROR:: settings', a_id, err);
 				console.log(
 					co_id,
@@ -212,7 +207,7 @@ module.exports = {
 				passive,
 				demoter,
 			])
-			.catch(err => {
+			.catch((err) => {
 				console.log('ERROR:: review_email', a_id, err);
 				error = true;
 			});
@@ -240,7 +235,7 @@ module.exports = {
 		email_4.referral = defaults.referral.email_4;
 		email_5.referral = defaults.referral.email_5;
 		email_6.referral = defaults.referral.email_6;
-		await db.create.addon_email([co_id, email_1, email_2, email_3, email_4, email_5, email_6]).catch(err => {
+		await db.create.addon_email([co_id, email_1, email_2, email_3, email_4, email_5, email_6]).catch((err) => {
 			console.log('ERROR:: addon_email', a_id, err);
 			error = true;
 		});
@@ -256,7 +251,7 @@ module.exports = {
 		let defaults = await db.info.specific_default([indust]);
 		if (!defaults[0]) {
 			// Create Defaults
-			let allD = await db.info.specific_default(['All']).catch(err => {
+			let allD = await db.info.specific_default(['All']).catch((err) => {
 				console.log('ERROR:: specific_default', a_id, err);
 				error = true;
 			});
@@ -273,7 +268,7 @@ module.exports = {
 					allD.review_landing,
 					allD.addon_landing,
 				])
-				.catch(err => {
+				.catch((err) => {
 					console.log('ERROR:: new_industry_default', a_id, err);
 					error = true;
 				});
@@ -299,13 +294,15 @@ module.exports = {
 		let active_prod = { reviews: active, cross_sell: false, referral: false, winback: false, leadgen: false };
 		let place_id = google_link !== null ? (google_link.includes('placeid') ? google_link.split('placeid=')[1] : 'N/A') : 'N/A';
 		// CREATE CORPORATION
-		let company = await db.create.business([corp.cor_id, indust, company_name, owner_name, address, phone, email, utc_offset, geo, active_prod]).catch(err => {
-			console.log('ERROR:: business', a_id, err);
-			error = true;
-		});
+		let company = await db.create
+			.business([corp.cor_id, indust, company_name, owner_name, address, phone, email, utc_offset, geo, active_prod])
+			.catch((err) => {
+				console.log('ERROR:: business', a_id, err);
+				error = true;
+			});
 		let co_id = company[0].c_id;
 		let hash = Default.mPassword(address.zip);
-		await db.create.login([co_id, cor_email, company_name, hash, 'client']).catch(err => {
+		await db.create.login([co_id, cor_email, company_name, hash, 'client']).catch((err) => {
 			console.log('ERROR:: password', a_id, err);
 			error = true;
 		});
@@ -323,7 +320,7 @@ module.exports = {
 				Default.rank_key([0]),
 				customers,
 			])
-			.catch(err => {
+			.catch((err) => {
 				console.log('ERROR:: analytics', a_id, err);
 				error = true;
 			});
@@ -338,7 +335,7 @@ module.exports = {
 				Default.feedback_alert('all', 'NO EMAIL'),
 				Default.reportHistory(),
 			])
-			.catch(err => {
+			.catch((err) => {
 				console.log('ERROR:: report_setting', a_id, err);
 				error = true;
 			});
@@ -352,7 +349,7 @@ module.exports = {
 				email_logo ? email_logo : 'N/A',
 				defaults.settings.color,
 			])
-			.catch(err => {
+			.catch((err) => {
 				console.log('ERROR:: settings', a_id, err);
 				console.log(
 					co_id,
@@ -388,7 +385,7 @@ module.exports = {
 				passive,
 				demoter,
 			])
-			.catch(err => {
+			.catch((err) => {
 				console.log('ERROR:: review_email', a_id, err);
 				error = true;
 			});
@@ -416,16 +413,16 @@ module.exports = {
 		email_4.referral = defaults.referral.email_4;
 		email_5.referral = defaults.referral.email_5;
 		email_6.referral = defaults.referral.email_6;
-		await db.create.addon_email([co_id, email_1, email_2, email_3, email_4, email_5, email_6]).catch(err => {
+		await db.create.addon_email([co_id, email_1, email_2, email_3, email_4, email_5, email_6]).catch((err) => {
 			console.log('ERROR:: addon_email', a_id, err);
 			error = true;
 		});
 	},
 	fixSettings: async (req, res) => {
 		let db = req.app.get('db');
-		await axios.get('http://localhost:4000/api/migrate').then(async res => {
+		await axios.get('http://localhost:4000/api/migrate').then(async (res) => {
 			let { aData } = res.data;
-			await aData.forEach(async e => {
+			await aData.forEach(async (e) => {
 				let set = await db.migrate.check_settings([e.a_id]);
 				if (!set[0]) {
 					console.log(e.a_id);
@@ -450,17 +447,17 @@ module.exports = {
 			let db = req.app.get('db');
 			let corporations = await db.migrate.corporations([]);
 			let amt = 0;
-			corporations.slice(1000, 3000).forEach(async e => {
+			corporations.slice(1000, 3000).forEach(async (e) => {
 				await axios
 					.get(`http://localhost:4000/api/migrate/active/${e.agent_id}`)
-					.then(async res => {
+					.then(async (res) => {
 						if (res.data.msg === 'GOOD') {
 							let active_prod = { reviews: res.data.active, cross_sell: false, referral: false, winback: false, leadgen: false };
 							await db.update.active_prod([e.c_id, active_prod]);
 						} else {
 						}
 					})
-					.catch(e => console.log(e));
+					.catch((e) => console.log(e));
 			});
 			// .slice(0, 1500)
 			// .slice(750, 1500)
@@ -496,19 +493,19 @@ module.exports = {
 			let db = req.app.get('db');
 			let corporations = await db.migrate.corporations([]);
 			let amt = 0;
-			corporations.slice(0, 1).forEach(async e => {
-				await axios.get(`http://localhost:4000/api/migrate/customers/${e.agent_id}`).then(async res => {
+			corporations.slice(0, 1).forEach(async (e) => {
+				await axios.get(`http://localhost:4000/api/migrate/customers/${e.agent_id}`).then(async (res) => {
 					if (res.data.msg === 'GOOD') {
 						let { customers } = res.data;
 						customers
 							// .slice( 0, 5 )
-							.forEach(async cus => {
+							.forEach(async (cus) => {
 								let { first_name, last_name, email, phone, date_last_sent, date_added, status_info, rating } = cus;
 								let activity = { active: [{ type: status_info, date: date_last_sent }] };
 								let active = status_info === 'Unsubscribed' ? false : true;
 								await db.migrate
 									.indv_cust([e.c_id, first_name, last_name, email, phone, date_last_sent, activity, date_added, active, e.cor_id, 00000000])
-									.catch(err => console.log('ERROR::', err));
+									.catch((err) => console.log('ERROR::', err));
 								// console.log(e.c_id, first_name, last_name, email, phone, date_last_sent, activity, date_added, active, e.cor_id);
 							});
 						// console.log(customers.length);
@@ -545,7 +542,7 @@ module.exports = {
 		try {
 			let db = req.app.get('db');
 			let agents = await db.migrate.all_place_id([]);
-			agents.map(async e => {
+			agents.map(async (e) => {
 				if (e.place_id && e.place_id !== 'N/A' && e.place_id !== 'NA') {
 					let links = { links: [{ site: 'Google', link: `https://search.google.com/local/writereview?placeid=${e.place_id}` }] };
 					await db.update.links([e.c_id, links]);
@@ -572,18 +569,18 @@ module.exports = {
 		let key = check[0].c_api.llinternal;
 		let { c_id, cor_id } = check[0];
 		console.log('HERE', key);
-		await axios.get(`http://localhost:4000/api/migrate/customers/${key}`).then(res => {
+		await axios.get(`http://localhost:4000/api/migrate/customers/${key}`).then((res) => {
 			if (res.data.msg === 'GOOD') {
 				let { customers } = res.data;
 				console.log(customers.length);
 				customers
 					// .slice(0, 5) //HELLO PLEASE DONT DELETE
-					.forEach(async cus => {
+					.forEach(async (cus) => {
 						let { first_name, last_name, email, phone, date_last_sent, date_added, status_info, rating, customer_id } = cus;
 						// console.log(date_last_sent);
 						let activity = { active: [{ type: status_info, date: date_last_sent }] };
 						let active = status_info === null ? true : status_info.toLowerCase().includes('unsub') || status_info === 'Failed to send' ? false : true;
-						let last_sent = sent => {
+						let last_sent = (sent) => {
 							if (sent === null) {
 								return '2025-06-23';
 							} else if (sent.toLowerCase().includes('unsub')) {
@@ -598,10 +595,10 @@ module.exports = {
 						let cust = await req.app
 							.get('db')
 							.migrate.indv_cust([c_id, first_name, last_name, email, phone, last_sent(status_info), activity, date_added, active, cor_id, customer_id])
-							.catch(err => console.log('ERROR::', err));
+							.catch((err) => console.log('ERROR::', err));
 						// CREATE FEEDBACK
 						if ((status_info !== null || status_info === 'Customer added') && active && cust[0]) {
-							let emailStatus = info => {
+							let emailStatus = (info) => {
 								switch (info) {
 									case '1st reminder sent':
 										return 'First Review Reminder';
@@ -647,14 +644,12 @@ module.exports = {
 		let date = moment().format('YYYY-MM-DD');
 		// GET CUSTOMERS TOTAL
 		// GET ALL WITH NO FEEDBACK
-		let lastSend = moment()
-			.subtract(check.repeat_request.repeat, 'days')
-			.format('YYYY-MM-DD');
+		let lastSend = moment().subtract(check.repeat_request.repeat, 'days').format('YYYY-MM-DD');
 		console.log(lastSend);
 		let total = await db.info.customers.count_comp_total([check.c_id, lastSend]);
 		let remaining = await db.info.customers.cust_activity([check.c_id]);
 		remaining = remaining.filter(
-			e => Moment(e.last_sent).format('x') <= Moment(lastSend).format('x') || e.activity.active[e.activity.active.length - 1].type === 'Customer added',
+			(e) => Moment(e.last_sent).format('x') <= Moment(lastSend).format('x') || e.activity.active[e.activity.active.length - 1].type === 'Customer added',
 		).length;
 		check.customers.reviews.push({
 			size: total[0].total,
@@ -673,7 +668,7 @@ module.exports = {
 		let date = moment().format('YYYY-MM-DD');
 		await axios
 			.get(`https://maps.googleapis.com/maps/api/place/details/json?placeid=${e.place_id}&key=${GOOGLE_PLACE_API}`)
-			.then(async resp => {
+			.then(async (resp) => {
 				if (resp.status === 200) {
 					if (resp.data.status === 'OK') {
 						let { result } = resp.data;
@@ -701,7 +696,7 @@ module.exports = {
 					}
 				}
 			})
-			.catch(e => console.log(e));
+			.catch((e) => console.log(e));
 		res.status(200).send({ msg: 'GOOD' });
 	},
 	syncCustomers: async (req, res) => {
@@ -723,12 +718,12 @@ module.exports = {
 	SFTest: async (req, res) => {
 		var conn = new jsforce.Connection();
 		await conn
-			.login(SF_USERNAME, SF_PASSWORD + SF_SECURITY_TOKEN, function(err, userInfo) {
+			.login(SF_USERNAME, SF_PASSWORD + REACT_APP_SF_SECURITY_TOKEN, function (err, userInfo) {
 				if (err) {
 					return console.error('This error is in the auth callback: ' + err);
 				}
 			})
-			.then(res => {
+			.then((res) => {
 				console.log(res);
 			});
 		res.status(200).send({ c: conn.limitInfo });

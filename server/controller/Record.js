@@ -8,6 +8,10 @@ const axios = require('axios');
 const moment = require('moment');
 const Err = require('./Error');
 const sendEmail = require('./Mail/Reviews');
+const { SF_SECRET, REACT_APP_SF_SECURITY_TOKEN, SF_USERNAME, SF_PASSWORD } = process.env;
+var jsforce = require('jsforce');
+var conn = new jsforce.Connection();
+
 module.exports = {
 	addonRecord: async (req, res) => {
 		try {
@@ -18,7 +22,7 @@ module.exports = {
 			if (!update[0]) {
 				let info = await db.info.specific_business([client_id]);
 				let cust = await db.info.customer([cust_id]);
-				let check = cust[0].activity.active.filter(e => e.date === Moment().format('YYYY-MM-DD') && e.type.includes('Clicked Email'));
+				let check = cust[0].activity.active.filter((e) => e.date === Moment().format('YYYY-MM-DD') && e.type.includes('Clicked Email'));
 				if (!check[0]) {
 					await cust[0].activity.active.push({ date: Moment().format('YYYY-MM-DD'), type: `Clicked Email` });
 					let activity = cust[0].activity;
@@ -43,9 +47,9 @@ module.exports = {
 			let { type } = req.params;
 			// UPDATE CUSTOMER ACTIVITY
 			if (type === 'review' && Array.isArray(req.body)) {
-				req.body.map(async e => {
+				req.body.map(async (e) => {
 					let { event, timestamp, email, category } = e;
-					if (Array.isArray(category) && category[0] !== 'Error' && category[0] !== 'undefined') {
+					if (Array.isArray(category) && category[0] !== 'Error' && category[0] !== 'undefined' && category[0] === 'reviews') {
 						// Check
 						let check = await db.record.check([parseInt(category[2])]);
 						if (parseInt(category[2]) && !email.includes('@sink.sendgrid.net') && category[0] === 'reviews' && check[0]) {
@@ -124,12 +128,14 @@ module.exports = {
 			}
 			const directF = await db.record.direct_feedback([cust_id, feedback]);
 			if (directF[0]) {
-				let check = cust.activity.active.filter(e => e.date === Moment().format('YYYY-MM-DD') && e.type.includes('Left Feedback'));
+				let check = cust.activity.active.filter((e) => e.date === Moment().format('YYYY-MM-DD') && e.type.includes('Left Feedback'));
 				if (!check[0]) {
 					await db.record.update_activity([cust_id, activity]);
 				}
 				// Send Feedback Email
-				await module.exports.notificationEmail({ info, rating, cust, feedback });
+				if (Array.isArray(info.feedback_alert.alert) ? info.feedback_alert.alert[0] : false) {
+					await module.exports.notificationEmail({ info, rating, cust, feedback });
+				}
 				res.status(200).send({ status: 'GOOD', msg, directF });
 			} else {
 				res.status(200).send({ status: 'BAD', msg: 'Something Went Wrong. Thank you' });
@@ -156,7 +162,7 @@ module.exports = {
 			}
 			const clicked = await db.record.site_click([cust_id, site]);
 			if (clicked[0]) {
-				let check = cust.activity.active.filter(e => e.date === Moment().format('YYYY-MM-DD') && e.type.includes('Clicked to'));
+				let check = cust.activity.active.filter((e) => e.date === Moment().format('YYYY-MM-DD') && e.type.includes('Clicked to'));
 				if (!check[0]) {
 					cust = await db.record.update_activity([cust_id, activity]);
 				}
@@ -189,9 +195,9 @@ module.exports = {
 				let info = await db.info.specific_business([client_id]);
 				let cust = await db.info.customer([cust_id]);
 				// Update Activity
-				let check = cust[0].activity.active.filter(e => e.date === Moment().format('YYYY-MM-DD'));
+				let check = cust[0].activity.active.filter((e) => e.date === Moment().format('YYYY-MM-DD'));
 				if (
-					info[0].feedback_alert.alert.some(e => e.to !== `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`) &&
+					info[0].feedback_alert.alert.some((e) => e.to !== `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`) &&
 					info[0].feedback_alert.alert.length >= 1 &&
 					rating !== 'direct'
 				) {
@@ -202,7 +208,9 @@ module.exports = {
 						// Update Noti_email
 						let same = parseInt(og[0].rating) === null ? true : false;
 						await db.record.checks.update_noti_email([cust_id, update[0].last_email]);
-						await module.exports.notificationEmail({ info, rating, cust, same });
+						if (Array.isArray(info[0].feedback_alert.alert) ? info[0].feedback_alert.alert[0] : false) {
+							await module.exports.notificationEmail({ info, rating, cust, same });
+						}
 					}
 				}
 				if (!check[0]) {
@@ -228,147 +236,125 @@ module.exports = {
 		info = Array.isArray(info) ? info[0] : info;
 		cust = Array.isArray(cust) ? cust[0] : cust;
 		let { company_name, feedback_alert, c_api, logo, address } = info;
-		feedback_alert = feedback_alert.alert.filter(e => {
+		feedback_alert = feedback_alert.alert.filter((e) => {
 			if (rating >= 3) {
 				return e.type === 'all' || e.type === 'positive';
 			} else {
 				return e.type === 'all' || e.type === 'negative';
 			}
 		});
-		let from = c_api.salesforce.sf_id
-			? { email: c_api.salesforce.accountManager.email, name: `${c_api.salesforce.accountManager.name} @ ${process.env.REACT_APP_COMPANY_NAME}` }
+		let from = process.env.REACT_APP_SF_SECURITY_TOKEN
+			? c_api.salesforce.accountManager
+				? c_api.salesforce.accountManager.email
+					? { email: c_api.salesforce.accountManager.email, name: `${c_api.salesforce.accountManager.name} @ ${process.env.REACT_APP_COMPANY_NAME}` }
+					: { email: `manager@${process.env.REACT_APP_COMPANY_EXTENSION}.com`, name: process.env.REACT_APP_COMPANY_NAME }
+				: { email: `manager@${process.env.REACT_APP_COMPANY_EXTENSION}.com`, name: process.env.REACT_APP_COMPANY_NAME }
 			: { email: `manager@${process.env.REACT_APP_COMPANY_EXTENSION}.com`, name: process.env.REACT_APP_COMPANY_NAME };
 		let emails = [];
-		feedback_alert.forEach(e => emails.push({ email: e.to }));
-		displayStars = rating => {
-			let diff = 5 - rating;
-			let stars = [];
-			for (let i = 0; i < rating; i++) {
-				stars.push(process.env.REACT_APP_GOOGLE_STAR);
-			}
-			if (diff !== 0) {
-				for (let i = 0; i < diff; i++) {
-					stars.push(process.env.REACT_APP_GOOGLE_GREY_STAR);
-				}
-			}
-			return stars
-				.map(
-					(e, i) =>
-						`<img
-					src='${e}'
-					alt="Star Ratings"
-					style="
-						display: inline-block;
-						vertical-align: middle;
-						height: 50px;
-						width: 50px;
-						overflow: hidden;
-						margin: 0 1px;
-					"
-					key='${i}'
-				/>`,
-				)
-				.join('');
-		};
-		let email = [
-			{
-				to: emails,
-				from,
-				replyTo: from.email,
-				subject: `New Feedback Left`,
-				text: `New Feedback Left. `,
-				html: `
-				<style type="text/css">
-				@import url('https://fonts.googleapis.com/css?family=Hind+Vadodara&display=swap');
-				.noMargin {
-					margin: 0;
-					padding: 0;
-				}
-				button {
-					background-color: #4CAF50; 
-  					border: none;
-  					color: white;
-  					padding: 20px;
-  					text-align: center;
-  					text-decoration: none;
-  					display: inline-block;
-  					font-size: 16px;
-  					margin: 4px 2px;
-  					cursor: pointer;
-				}
-			</style>
-			
-			<body style="min-width: 600px;
-											max-width: 700px;
-											-webkit-user-select: none;
-											-moz-user-select: none;
-											-ms-user-select: none; 
-											user-select: none; 
-											color: black;
-											font-family: 'Hind Vadodara', sans-serif;">
-				<div style="width: 100%; min-height: 40vh; text-align: center; margin:0 auto; ">
-					<img
-						src='${logo}'
-						alt='Company Logo' style='max-width:200px;' />
-						<h2 class='noMargin' >${same ? 'New' : 'Updated'} Customer Feedback</h2>
-						<h3 class='noMargin' style="text-align: left; margin-left: 30%;">Feedback Provided on ${moment().format('MMM Do, YY')}</h3>
-						<h3 class='noMargin' style="text-align: left; margin-left: 30%;">Customer Name: ${cust.first_name} ${cust.last_name}</h3>
-						${cust.email ? `<h3 class='noMargin' style="text-align: left; margin-left: 30%;">Customer Email: ${cust.email}</h3>` : ''}
-						${cust.phone ? `<h3 class='noMargin' style="text-align: left; margin-left: 30%;">Customer Email: ${cust.phone}</h3>` : ''}
-						<h3 style="margin-bottom:0;  margin:5% auto 0;">Rating</h3>
-						<div style="min-width:60%; margin:0 auto; padding:0; text-align:center; font-size: 2em;  vertical-align: middle; display: inline-block;">
+		feedback_alert.forEach((e) => emails.push({ email: e.to }));
+		if (emails.every((e) => e.email) && emails[0]) {
+			let email = [
+				{
+					to: emails,
+					from,
+					replyTo: from.email,
+					subject: `New Feedback Left`,
+					text: `New Feedback Left. `,
+					html: `
+					<style type="text/css">
+					@import url('https://fonts.googleapis.com/css?family=Hind+Vadodara&display=swap');
+					.noMargin {
+						margin: 0;
+						padding: 0;
+					}
+					button {
+						background-color: #4CAF50; 
+						  border: none;
+						  color: white;
+						  padding: 20px;
+						  text-align: center;
+						  text-decoration: none;
+						  display: inline-block;
+						  font-size: 16px;
+						  margin: 4px 2px;
+						  cursor: pointer;
+					}
+				</style>
+				
+				<body style="min-width: 600px;
+												max-width: 700px;
+												-webkit-user-select: none;
+												-moz-user-select: none;
+												-ms-user-select: none; 
+												user-select: none; 
+												color: black;
+												font-family: 'Hind Vadodara', sans-serif;">
+					<div style="width: 100%; min-height: 40vh; text-align: center; margin:0 auto; ">
+						<img
+							src='${logo}'
+							alt='Company Logo' style='max-width:200px;' />
+							<h2 class='noMargin' >New Customer Feedback</h2>
+							<h3 class='noMargin' style="text-align: left; margin-left: 30%;">Feedback Provided on ${moment().format('MMM Do, YY')}</h3>
+							<h3 class='noMargin' style="text-align: left; margin-left: 30%;">Customer Name: ${cust.first_name} ${cust.last_name}</h3>
+							${cust.email ? `<h3 class='noMargin' style="text-align: left; margin-left: 30%;">Customer Email: ${cust.email}</h3>` : ''}
+							${cust.phone ? `<h3 class='noMargin' style="text-align: left; margin-left: 30%;">Customer Email: ${cust.phone}</h3>` : ''}
+							<h3 style="margin-bottom:0;  margin:5% auto 0;">Rating</h3>
+							<div style="min-width:60%; margin:0 auto; padding:0; text-align:center; font-size: 2em;  vertical-align: middle; display: inline-block;">
+								${
+									feedback
+										? `<div style="margin: 5% 0;">
+										<hr/>
+										<h6>NEW DIRECT FEEDBACK</h6>
+										<div style="font-size: .8em;">"${feedback}"</div>
+										<hr/>
+									</div>`
+										: ''
+								}
+								<h1 style="display: inline-block; vertical-align: middle; margin: 0; padding: 0; color: #e7711b; fontSize: 80px; fontFamily: arial,sans-serif; marginRight: 5px">
+									${rating}
+								</h1>
+							</div>
+							<h5 class='noMargin'>out of 5</h5>
 							${
-								feedback
-									? `<div style="margin: 5% 0;">
-									<h3>NEW DIRECT FEEDBACK</h3>
-									<div>${feedback}</div>
-								</div>`
-									: ''
+								true
+									? ''
+									: `<a href="${sendBack}indv-customer/${info.cor_id}/${cust.cus_id}/${info.c_id}" target="_blank" rel="noopener noreferrer">
+										<button
+											style="
+							height: 50px;
+							background-color: #4CAF50;border: none;
+							color: white;
+							padding: 20px;
+							text-align: center;
+							text-decoration: none;
+							display: inline-block;
+							font-size: 16px;
+							margin: 4px 2px;
+							cursor: pointer; 
+							"
+										>
+											View Customer Profile
+										</button>
+									</a>`
 							}
-							<h1 style="display: inline-block; vertical-align: middle; margin: 0; padding: 0; color: #e7711b; fontSize: 80px; fontFamily: arial,sans-serif; marginRight: 5px">
-								${rating}
-							</h1>
-							${displayStars(rating)}
+							<hr style='width:40%' />
+							<h3 class='noMargin'>${!same ? 'New' : 'Updated'} Feedback For ${company_name},</h3>
+							<h4 class='noMargin'>${address.street}, ${address.city}, ${address.state}, ${address.zip}</h4>
 						</div>
-						<h5 class='noMargin'>out of 5</h5>
-						${
-							true
-								? ''
-								: `<a href="${sendBack}indv-customer/${info.cor_id}/${cust.cus_id}/${info.c_id}" target="_blank" rel="noopener noreferrer">
-									<button
-										style="
-						height: 50px;
-						background-color: #4CAF50;border: none;
-						color: white;
-						padding: 20px;
-						text-align: center;
-						text-decoration: none;
-						display: inline-block;
-						font-size: 16px;
-						margin: 4px 2px;
-						cursor: pointer; 
-						"
-									>
-										View Customer Profile
-									</button>
-								</a>`
-						}
-						<hr style='width:40%' />
-						<h3 class='noMargin'>${same ? 'New' : 'Updated'} Feedback For ${company_name},</h3>
-						<h4 class='noMargin'>${address.street}, ${address.city}, ${address.state}, ${address.zip}</h4>
-					</div>
-					</body>
-					`,
-				category: ['feedback', 'notification', cust.cus_id.toString(), info.c_id.toString()],
-			},
-		];
+						***As a reminder, this customer is now automatically being invited to leave a review online. <br/>They may automatically receive a follow-up email down the road if they don't end up leaving a review within the next few days."
+						</body>
+						`,
+					category: ['feedback', 'notification', cust.cus_id.toString(), info.c_id.toString()],
+				},
+			];
+			sendEmail.sendMail(email);
+		}
 
 		// <div style="min-width: 60%; background-color: gray; text-align:center;">
 		// 	<h2 >View Customer Activity</h2>
 		// </div>
 		// </a>
 
-		sendEmail.sendMail(email);
 		// console.log(email);
 	},
 	referral: async (req, res) => {
@@ -382,55 +368,96 @@ module.exports = {
 	newReviews: async (app, allComp) => {
 		try {
 			let db = app.get('db');
-			let sunday = moment()
-				.day(0)
-				.format('YYYY-MM-DD');
+			let sunday = moment().day(0).format('YYYY-MM-DD');
 			allComp = await allComp
-				.filter(e => e.place_id !== 'N/A')
+				.filter((e) => e.place_id !== 'N/A')
 				.map(async (e, i) => {
-					await axios
-						.get(`https://maps.googleapis.com/maps/api/place/details/json?placeid=${e.place_id}&key=${GOOGLE_PLACE_API}`)
-						.then(async resp => {
-							if (resp.status === 200) {
-								if (resp.data.status === 'OK') {
-									let { result } = resp.data;
-									e.reviews = e.reviews.reviews.filter((value, index, self) => self.map(x => x.date).indexOf(value.date) == index);
-									e.reviews = { reviews: e.reviews };
-									let lastReviews =
-										e.reviews.reviews.length >= 5 ? e.reviews.reviews.slice(e.reviews.reviews.length - 5, e.reviews.reviews.length - 1) : e.reviews.reviews;
-									let rating = result.rating;
-									let newReviews = result.user_ratings_total;
-									if (lastReviews[lastReviews.length - 1] && Array.isArray(lastReviews)) {
-										let weekReview = newReviews - lastReviews[lastReviews.length - 1].totalReviews;
-										let month = lastReviews.reduce((a, b) => ({ newReviews: parseFloat(a.newReviews) + parseFloat(b.newReviews) })).newReviews + weekReview;
-										let status = month === 0 ? 'CRITICAL' : month === 1 ? 'URGENT' : month === 2 ? 'NEEDS ATTENTION' : month <= 5 ? 'GOOD' : 'SLOW';
-										// If Recording Length is less than 4 status default to "N/A"
-										let llRating = await db.info.customers.feedback_avg(e.c_id);
-										llRating = llRating[0].avg;
-										llRating = parseFloat(llRating).toFixed(2);
-										llRating = isNaN(llRating) ? '3' : llRating;
-										e.reviews.reviews.push({
-											totalReviews: newReviews,
-											newReviews: weekReview,
-											rating,
-											date: sunday,
-											status,
-											llrating: llRating,
-										});
-										let sorted = e.customers.reviews.sort((a, b) => (moment(a.date).format('x') > moment(b.date).format('x') ? 1 : -1));
-										let cns = sorted[sorted.length - 1].remaining;
-										let auto = e.reviews.reviews[e.reviews.reviews.length - 4] ? await DefaultFun.setting_auto_amt(cns, month, e) : 2;
-										if (auto !== 'NA' && !trial && e.auto_amt.amt !== 0) {
-											await db.update.record.auto_amt([e.c_id, { amt: auto }]);
+					if (e.place_id !== 'N/A') {
+						await axios
+							.get(`https://maps.googleapis.com/maps/api/place/details/json?placeid=${e.place_id}&key=${GOOGLE_PLACE_API}`)
+							.then(async (resp) => {
+								if (resp.status === 200) {
+									if (resp.data.status === 'OK') {
+										let { result } = resp.data;
+										e.reviews = e.reviews.reviews.filter((value, index, self) => self.map((x) => x.date).indexOf(value.date) == index);
+										e.reviews = { reviews: e.reviews };
+										let lastReviews =
+											e.reviews.reviews.length >= 5 ? e.reviews.reviews.slice(e.reviews.reviews.length - 5, e.reviews.reviews.length - 1) : e.reviews.reviews;
+										let rating = result.rating;
+										let newReviews = result.user_ratings_total ? result.user_ratings_total : 0;
+										if (lastReviews[lastReviews.length - 1] && Array.isArray(lastReviews)) {
+											let weekReview = newReviews - lastReviews[lastReviews.length - 1].totalReviews;
+											let month = lastReviews.reduce((a, b) => ({ newReviews: parseFloat(a.newReviews) + parseFloat(b.newReviews) })).newReviews + weekReview;
+											let status = month === 0 ? 'CRITICAL' : month === 1 ? 'URGENT' : month === 2 ? 'NEEDS ATTENTION' : month <= 5 ? 'GOOD' : 'SLOW';
+											// If Recording Length is less than 4 status default to "N/A"
+											let llRating = await db.info.customers.feedback_avg(e.c_id);
+											llRating = llRating[0].avg;
+											llRating = parseFloat(llRating).toFixed(2);
+											llRating = isNaN(llRating) ? '3' : llRating;
+											newReviews = newReviews >= 0 ? newReviews : 0;
+											e.reviews.reviews.push({
+												totalReviews: newReviews,
+												newReviews: weekReview,
+												rating,
+												date: sunday,
+												status,
+												llrating: llRating,
+											});
+											let sorted = e.customers.reviews.sort((a, b) => (moment(a.date).format('x') > moment(b.date).format('x') ? 1 : -1));
+											let cns = sorted[sorted.length - 1].remaining;
+											let auto = e.reviews.reviews[e.reviews.reviews.length - 4] ? await DefaultFun.setting_auto_amt(cns, month, e) : 2;
+											if (auto !== 'NA' && !trial && e.auto_amt.amt !== 0) {
+												await db.update.record.auto_amt([e.c_id, { amt: auto }]);
+											}
+											// UPDATE REVIEW HISTORY
+											await db.update.record.reviews([e.c_id, e.reviews]);
+											await db.update.record.review_history([e.c_id, isNaN(weekReview) ? 0 : weekReview, status]);
 										}
-										// UPDATE REVIEW HISTORY
-										await db.update.record.reviews([e.c_id, e.reviews]);
-										await db.update.record.review_history([e.c_id, weekReview, status]);
 									}
 								}
+							})
+							.catch((e) => console.log(e));
+					} else {
+						let { company_name } = e;
+						await axios.get(`https://api.scaleserp.com/search?api_key=${process.env.REACT_APP_SERP_API}&q=${company_name}`).then(async (resp) => {
+							if (resp.status === 200) {
+								let { knowledge_graph } = resp.data;
+								e.reviews = e.reviews.reviews.filter((value, index, self) => self.map((x) => x.date).indexOf(value.date) == index);
+								e.reviews = { reviews: e.reviews };
+								let lastReviews =
+									e.reviews.reviews.length >= 5 ? e.reviews.reviews.slice(e.reviews.reviews.length - 5, e.reviews.reviews.length - 1) : e.reviews.reviews;
+								let rating = knowledge_graph.rating;
+								let newReviews = knowledge_graph.reviews;
+								if (lastReviews[lastReviews.length - 1] && Array.isArray(lastReviews)) {
+									let weekReview = newReviews - lastReviews[lastReviews.length - 1].totalReviews;
+									let month = lastReviews.reduce((a, b) => ({ newReviews: parseFloat(a.newReviews) + parseFloat(b.newReviews) })).newReviews + weekReview;
+									let status = month === 0 ? 'CRITICAL' : month === 1 ? 'URGENT' : month === 2 ? 'NEEDS ATTENTION' : month <= 5 ? 'GOOD' : 'SLOW';
+									// If Recording Length is less than 4 status default to "N/A"
+									let llRating = await db.info.customers.feedback_avg(e.c_id);
+									llRating = llRating[0].avg;
+									llRating = parseFloat(llRating).toFixed(2);
+									llRating = isNaN(llRating) ? '3' : llRating;
+									e.reviews.reviews.push({
+										totalReviews: newReviews,
+										newReviews: weekReview,
+										rating,
+										date: sunday,
+										status,
+										llrating: llRating,
+									});
+									let sorted = e.customers.reviews.sort((a, b) => (moment(a.date).format('x') > moment(b.date).format('x') ? 1 : -1));
+									let cns = sorted[sorted.length - 1].remaining;
+									let auto = e.reviews.reviews[e.reviews.reviews.length - 4] ? await DefaultFun.setting_auto_amt(cns, month, e) : 2;
+									if (auto !== 'NA' && !trial && e.auto_amt.amt !== 0) {
+										await db.update.record.auto_amt([e.c_id, { amt: auto }]);
+									}
+									// UPDATE REVIEW HISTORY
+									await db.update.record.reviews([e.c_id, e.reviews]);
+									// await db.update.record.review_history([e.c_id, weekReview, status]);
+								}
 							}
-						})
-						.catch(e => console.log(e));
+						});
+					}
 				});
 		} catch (e) {
 			Err.emailMsg(e, 'Record/newReviews');
@@ -439,17 +466,13 @@ module.exports = {
 	},
 	fbReviews: async (app, allComp) => {
 		let random = (min, max) => Math.ceil(Math.random() * (max - min) + min);
-		let sunday = moment()
-			.day(0)
-			.format('YYYY-MM-DD');
-		let lastSunday = moment()
-			.day(-7)
-			.format('YYYY-MM-DD');
+		let sunday = moment().day(0).format('YYYY-MM-DD');
+		let lastSunday = moment().day(-7).format('YYYY-MM-DD');
 		for (let i = 0; i < allComp.length; i++) {
 			const e = allComp[i];
 			if (e.c_id) {
 				setTimeout(async () => {
-					let url = e.review_links.links.filter(el => el.site === 'Facebook')[0].link;
+					let url = e.review_links.links.filter((el) => el.site === 'Facebook')[0].link;
 					const result = await axios.get(url);
 					// let $ = cheerio.load(result.data);
 					let html = result.data;
@@ -459,17 +482,24 @@ module.exports = {
 						// console.log(e.company_name, 'Has Reviews');
 						let totalRatings = html.split('Based on the opinion of ')[1].split(' people')[0];
 						totalRatings = parseInt(totalRatings);
-						let recent = e.reviews.reviews.filter(e2 => e2.date === sunday)[0];
-						let last = e.reviews.reviews.filter(e2 => e2.date === lastSunday);
+						let recent = e.reviews.reviews.filter((e2) => e2.date === sunday)[0];
+						let last = e.reviews.reviews.filter((e2) => e2.date === lastSunday);
 						if (last[0]) {
-							recent.facebook = last.facebook
-								? { total: parseInt(totalRatings), new: parseInt(totalRatings) - parseInt(last.facebook.total) }
-								: { total: parseInt(totalRatings), new: 0 };
+							if (last[0].facebook) {
+								let newFB = parseInt(totalRatings) - parseInt(last[0].facebook.total);
+								newFB = newFB >= 0 ? newFB : 0;
+								if (newFB >= 1) {
+									console.log(e.company_name);
+								}
+								recent.facebook = { total: parseInt(totalRatings), new: newFB };
+							} else {
+								recent.facebook = { total: totalRatings, new: 0 };
+							}
 						} else {
 							recent.facebook = { total: totalRatings, new: 0 };
 						}
 						e.reviews.reviews.splice(
-							e.reviews.reviews.findIndex(e2 => e2.date === sunday),
+							e.reviews.reviews.findIndex((e2) => e2.date === sunday),
 							1,
 							recent,
 						);
@@ -477,14 +507,16 @@ module.exports = {
 					} else {
 						// console.log(url);
 						// console.log(e.company_name, 'Does Not Have Reviews');
-						let recent = e.reviews.reviews.filter(e2 => e2.date === sunday)[0];
-						recent.facebook = { total: 0, new: 0 };
-						e.reviews.reviews.splice(
-							e.reviews.reviews.findIndex(e2 => e2.date === sunday),
-							1,
-							recent,
-						);
-						await app.get('db').record.fb_ratings(e.c_id, e.reviews);
+						let recent = e.reviews.reviews.filter((e2) => e2.date === sunday)[0];
+						if (recent) {
+							recent.facebook = { total: 0, new: 0 };
+							e.reviews.reviews.splice(
+								e.reviews.reviews.findIndex((e2) => e2.date === sunday),
+								1,
+								recent,
+							);
+							await app.get('db').record.fb_ratings(e.c_id, e.reviews);
+						}
 					}
 				}, i * random(250, 750));
 			}
@@ -494,18 +526,22 @@ module.exports = {
 		try {
 			let db = app.get('db');
 			let date = moment().format('YYYY-MM-DD');
-			await allComp.forEach(async e => {
+			if (process.env.REACT_APP_VERTICLES === 'false') {
+				conn.login(SF_USERNAME, SF_PASSWORD + REACT_APP_SF_SECURITY_TOKEN, function (err, userInfo) {}); //.then(re => console.log(re));
+			}
+			await allComp.forEach(async (e) => {
 				// GET CUSTOMERS TOTAL
 				// GET ALL WITH NO FEEDBACK
-				let lastSend = moment()
-					.subtract(e.repeat_request.repeat, 'days')
-					.format('YYYY-MM-DD');
+				let lastSend = moment().subtract(e.repeat_request.repeat, 'days').format('YYYY-MM-DD');
 				let total = await db.info.customers.count_comp_total([e.c_id, lastSend]);
 				let remaining = await db.info.customers.cust_activity([e.c_id]);
+				// all that are customers not sent
+				let notSent = await db.record.added_not_sent([e.c_id]);
 				remaining = remaining.filter(
-					e => Moment(e.last_sent).format('x') <= Moment(lastSend).format('x') || e.activity.active[e.activity.active.length - 1].type === 'Customer added',
+					(e) => Moment(e.last_sent).format('x') <= Moment(lastSend).format('x') || e.activity.active[e.activity.active.length - 1].type === 'Customer added',
 				).length;
 				e.customers.reviews.push({
+					notSent: notSent[0].total,
 					size: total[0].total,
 					remaining: remaining,
 					date,
@@ -514,18 +550,35 @@ module.exports = {
 				let cns = e.customers.reviews[e.customers.reviews.length - 1].remaining;
 				let month;
 				let newC;
-				if (e.reviews.reviews[e.reviews.reviews.length - 4]) {
+				if (e.reviews.reviews[e.reviews.reviews.length - 5]) {
 					let one = e.reviews.reviews[e.reviews.reviews.length - 1].newReviews;
 					let two = e.reviews.reviews[e.reviews.reviews.length - 2].newReviews;
 					let three = e.reviews.reviews[e.reviews.reviews.length - 3].newReviews;
 					let four = e.reviews.reviews[e.reviews.reviews.length - 4].newReviews;
-					month = one + two + three + four;
+					let five = e.reviews.reviews[e.reviews.reviews.length - 5].newReviews;
+					month = one + two + three + four + five;
 				} else {
 					month = 1;
 					newC = true;
 				}
-				let auto = !newC ? await DefaultFun.setting_auto_amt(cns, month, e) : 2;
-				if ((auto !== 'NA' && !trial && e.auto_amt.amt !== 0) || e.auto_amt.pause) {
+				if (process.env.REACT_APP_SF_SECURITY_TOKEN) {
+					if (cns <= 0 && e.c_api.salesforce.sf_id) {
+						// UPDATE SF
+						conn.sobject('Account').update(
+							{
+								Id: e.c_api.salesforce.sf_id,
+								need_reviews_list__c: true,
+							},
+							function (err, ret) {
+								if (err || !ret.success) {
+									return console.error('Record/CustCount', err, ret);
+								}
+							},
+						);
+					}
+				}
+				let auto = await DefaultFun.setting_auto_amt(cns, month, e);
+				if ((auto !== 'NA' && !trial && e.auto_amt.amt !== 0 && !newC) || e.auto_amt.pause) {
 					await db.update.record.auto_amt([e.c_id, { amt: auto }]);
 				}
 				await db.update.record.customers_reviews([e.c_id, e.customers]);
@@ -548,7 +601,7 @@ module.exports = {
 			let info = await req.app.get('db').info.cust_comp([client_id, cust_id]);
 			if (info[0]) {
 				// Update Activity and Mark as not active
-				if (!info[0].activity.active.some(e => e.type === 'Unsubscribed' && e.date === Moment().format('YYYY-MM-DD'))) {
+				if (!info[0].activity.active.some((e) => e.type === 'Unsubscribed' && e.date === Moment().format('YYYY-MM-DD'))) {
 					await info[0].activity.active.push({ date: Moment().format('YYYY-MM-DD'), type: `Unsubscribed` });
 					let activity = info[0].activity;
 					await req.app.get('db').record.update_activity([cust_id, activity]);
@@ -562,6 +615,55 @@ module.exports = {
 			Err.emailMsg(error, 'Record/unsubscribe');
 			console.log('ERROR Record/unsubscribe', error);
 			res.status(200).send({ msg: 'There was an Error in unsubscribing', error });
+		}
+	},
+	depletedEmails: async (allComp, am) => {
+		if (process.env.REACT_APP_SF_SECURITY_TOKEN) {
+			am.map((e) => {
+				let { email, name } = e;
+				let fil = allComp.filter((el) => {
+					if (process.env.REACT_APP_SF_SECURITY_TOKEN) {
+						if (el.c_api.salesforce) {
+							if (el.c_api.salesforce.accountManager) {
+								if (el.c_api.salesforce.accountManager.email === email && el.customers.reviews[el.customers.reviews.length - 1].remaining <= 50) {
+									return el;
+								}
+							}
+						}
+					}
+				});
+				fil = fil.sort((a, b) =>
+					a.customers.reviews[a.customers.reviews.length - 1].remaining > b.customers.reviews[b.customers.reviews.length - 1].remaining ? 1 : -1,
+				);
+				let emailFormat = [
+					{
+						to: { name, email },
+						from: { name: 'Ya Boi Ryan', email: `rhutchison@${process.env.REACT_APP_COMPANY_EXTENSION}.com` },
+						replyTo: `rhutchison@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
+						subject: `You have ${fil.length} clients with depleated lists`,
+						text: `${fil.map((el) => el.company_name + ' ' + el.customers.reviews[el.customers.reviews.length - 1].remaining + '\n').join('')}`,
+						html: `
+						<h3>Here are your weekly depleated lists!</h3>
+						<br/>
+						${fil
+							.map(
+								(el) => `
+							<div>
+								<a href='https://liftlocal.lightning.force.com/lightning/r/Account/${el.c_api.salesforce.sf_id}/view'>${el.company_name}</a>
+								-
+								${el.customers.reviews[el.customers.reviews.length - 1].remaining}
+							</div>
+							<br/>
+							`,
+							)
+							.join('')}
+						
+						`,
+						category: ['depleated', 'notification', '0', '1'],
+					},
+				];
+				require('./Mail/Reviews').sendMail(emailFormat);
+			});
 		}
 	},
 };

@@ -2,7 +2,7 @@
 const cloudinary = require('cloudinary').v2;
 const Default = require('./Defaults');
 const Moment = require('moment');
-const { CLOUDINARY_API_KEY, CLOUDINARY_SECRET, CLOUDINARY_NAME, SF_SECURITY_TOKEN, SF_USERNAME, SF_PASSWORD } = process.env;
+const { CLOUDINARY_API_KEY, CLOUDINARY_SECRET, CLOUDINARY_NAME, REACT_APP_SF_SECURITY_TOKEN, SF_USERNAME, SF_PASSWORD } = process.env;
 var jsforce = require('jsforce');
 const Update = require('./Update');
 cloudinary.config({
@@ -10,11 +10,12 @@ cloudinary.config({
 	api_key: CLOUDINARY_API_KEY,
 	api_secret: CLOUDINARY_SECRET,
 });
+const Mail = require('./Mail/Reviews');
 const ll = 'YYYY-MM-DD';
 const Err = require('./Error');
-const proper = str => {
+const proper = (str) => {
 	if (typeof str === 'string') {
-		return str.replace(/\w\S*/g, function(txt) {
+		return str.replace(/\w\S*/g, function (txt) {
 			return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 		});
 	} else {
@@ -44,14 +45,14 @@ module.exports = {
 				let defaults = await db.info.specific_default([industry]);
 				if (!defaults[0]) {
 					// Create Defaults
-					let allD = await db.info.specific_default(['All']).catch(err => {
+					let allD = await db.info.specific_default(['All']).catch((err) => {
 						console.log('ERROR:: specific_default', err);
 						error = true;
 					});
 					allD = allD[0];
 					defaults = await db.create
 						.new_industry_default([
-							industry.replace(/\w\S*/g, function(txt) {
+							industry.replace(/\w\S*/g, function (txt) {
 								return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 							}),
 							allD.email,
@@ -63,7 +64,7 @@ module.exports = {
 							allD.review_landing,
 							allD.addon_landing,
 						])
-						.catch(err => {
+						.catch((err) => {
 							console.log('ERROR:: new_industry_default', err);
 							error = true;
 						});
@@ -73,28 +74,35 @@ module.exports = {
 				let address = Default.address(info.street, info.city, info.zip, info.state);
 				let phone = Default.phone(info.phone);
 				let email = Default.email(info.email);
-				const corpCheck = await db.info.get_single_corp([info.businessName.trim()]).catch(err => {
+				const corpCheck = await db.info.get_single_corp([info.businessName.trim()]).catch((err) => {
 					console.log('ERROR:: corpCheck', err);
 					error = true;
 				});
 				if (corpCheck[0]) {
 					res.status(200).send({ msg: 'Company Already Exists' });
 				} else {
-					if (sf_key.length >= 5) {
-						// Get SF Items
-						c_api = await Update.syncSF(sf_key, c_api);
-					} else {
-						res.status(200).send({ msg: 'Need To Input sf_key' });
+					if (REACT_APP_SF_SECURITY_TOKEN) {
+						if (sf_key.length >= 5 && process.env.REACT_APP_VERTICLES === 'false') {
+							// Get SF Items
+							c_api = await Update.syncSF(sf_key, c_api);
+							let named = await Update.sfName(sf_key);
+							if (named) {
+								name = Default.name(named.Name.split(' ')[0], named.Name.split(' ').slice(1, 500).join(' '));
+								if (named.Email) {
+									email = Default.email(named.Email);
+								}
+							}
+						}
 					}
 					let corp = await db.create
 						.corporation([
-							industry.replace(/\w\S*/g, function(txt) {
+							industry.replace(/\w\S*/g, function (txt) {
 								return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 							}),
 							info.businessName.trim(),
 							info.email.trim(),
 						])
-						.catch(err => {
+						.catch((err) => {
 							console.log('ERROR:: corporation', err);
 							error = true;
 						});
@@ -102,7 +110,7 @@ module.exports = {
 					let company = await db.create
 						.business([
 							corp.cor_id,
-							industry.replace(/\w\S*/g, function(txt) {
+							industry.replace(/\w\S*/g, function (txt) {
 								return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 							}),
 							info.businessName.trim(),
@@ -115,14 +123,14 @@ module.exports = {
 							Default.activeProd(reviews, cross, referral, winback, leadgen),
 							c_api,
 						])
-						.catch(err => {
+						.catch((err) => {
 							console.log('ERROR:: business', err);
 							error = true;
 						});
 					let co_id = company[0].c_id;
 					// Create Login
 					let hash = Default.password(info.lastName, address.zip);
-					await db.create.login([co_id, info.email, info.email, hash, 'client']).catch(err => {
+					await db.create.login([co_id, info.email, info.email, hash, 'client']).catch((err) => {
 						console.log('ERROR:: password', err);
 						error = true;
 					});
@@ -140,13 +148,17 @@ module.exports = {
 							{ rank: [] },
 							Default.rank_key(info.rankKey),
 						])
-						.catch(err => {
+						.catch((err) => {
 							console.log('ERROR:: analytics', err);
 							error = true;
 						});
 					// Get From Defaults and add to report settings and Settings
 					let from_email = (defaults.settings.from_email = 'owner' ? info.email : defaults.settings.from_email);
-					let feedEmail = c_api.salesforce.contact ? c_api.salesforce.contact.Email : `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`;
+					let feedEmail = REACT_APP_SF_SECURITY_TOKEN
+						? c_api.salesforce.contact
+							? c_api.salesforce.contact.Email
+							: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`
+						: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`;
 					await db.create
 						.report_setting([
 							co_id,
@@ -157,7 +169,7 @@ module.exports = {
 							Default.reportHistory(),
 							Default.review_links(info.links),
 						])
-						.catch(err => {
+						.catch((err) => {
 							console.log('ERROR:: report_setting', err);
 							error = true;
 						});
@@ -178,7 +190,7 @@ module.exports = {
 							info.img,
 							info.color,
 						])
-						.catch(err => {
+						.catch((err) => {
 							console.log('ERROR:: settings', err);
 							error = true;
 						});
@@ -209,7 +221,7 @@ module.exports = {
 							passive,
 							demoter,
 						])
-						.catch(err => {
+						.catch((err) => {
 							console.log('ERROR:: review_email', err);
 							error = true;
 						});
@@ -237,12 +249,12 @@ module.exports = {
 					email_4.referral = defaults.referral.email_4;
 					email_5.referral = defaults.referral.email_5;
 					email_6.referral = defaults.referral.email_6;
-					await db.create.addon_email([co_id, email_1, email_2, email_3, email_4, email_5, email_6]).catch(err => {
+					await db.create.addon_email([co_id, email_1, email_2, email_3, email_4, email_5, email_6]).catch((err) => {
 						console.log('ERROR:: addon_email', err);
 						error = true;
 					});
 					if (!error) {
-						let businessInfo = await db.info.new_business([co_id]).catch(err => {
+						let businessInfo = await db.info.new_business([co_id]).catch((err) => {
 							console.log('ERROR:: new_business', err);
 							error = true;
 						});
@@ -298,7 +310,7 @@ module.exports = {
 				let hash = Default.password(info.lastName, address.zip);
 				let lEmail = info.email ? info.email : 'No Current Email';
 				let user = firstName.toLowerCase().split('')[0] + lastName.toLowerCase();
-				await db.create.login([co_id, lEmail, user, hash, 'client']).catch(err => {
+				await db.create.login([co_id, lEmail, user, hash, 'client']).catch((err) => {
 					console.log('ERROR:: password', err);
 					error = true;
 				});
@@ -315,7 +327,7 @@ module.exports = {
 						{ rank: [] },
 						Default.rank_key(info.rankKey),
 					])
-					.catch(err => {
+					.catch((err) => {
 						console.log('ERROR:: analytics', err);
 						error = true;
 					});
@@ -330,11 +342,11 @@ module.exports = {
 						Default.reportHistory(),
 						Default.review_links(info.links),
 					])
-					.catch(err => {
+					.catch((err) => {
 						console.log('ERROR:: report_setting', err);
 						error = true;
 					});
-				await db.create.settings([co_id, bus[0].auto_amt, bus[0].email_format, 1, bus[0].repeat_request, info.img, info.color]).catch(err => {
+				await db.create.settings([co_id, bus[0].auto_amt, bus[0].email_format, 1, bus[0].repeat_request, info.img, info.color]).catch((err) => {
 					console.log('ERROR:: settings', err);
 					error = true;
 				});
@@ -357,17 +369,17 @@ module.exports = {
 						bus[0].passive_landing,
 						bus[0].demoter_landing,
 					])
-					.catch(err => {
+					.catch((err) => {
 						console.log('ERROR:: review_email', err);
 						error = true;
 					});
 
-				await db.create.addon_email([co_id, bus[0].email_1, bus[0].email_2, bus[0].email_3, bus[0].email_4, bus[0].email_5, bus[0].email_6]).catch(err => {
+				await db.create.addon_email([co_id, bus[0].email_1, bus[0].email_2, bus[0].email_3, bus[0].email_4, bus[0].email_5, bus[0].email_6]).catch((err) => {
 					console.log('ERROR:: addon_email', err);
 					error = true;
 				});
 				if (!error) {
-					let businessInfo = await db.info.new_business([co_id]).catch(err => {
+					let businessInfo = await db.info.new_business([co_id]).catch((err) => {
 						console.log('ERROR:: new_business', err);
 						error = true;
 					});
@@ -424,7 +436,7 @@ module.exports = {
 		try {
 			let { industry } = req.params;
 			let db = req.app.get('db');
-			industry = 'Insurance';
+			// industry = 'Insurance';
 			let { addon, review, review_landing, addon_landing, settings } = Default;
 			await db.create.defaults([industry, review, addon.leadgen, addon.winback, addon.referral, addon.cross, settings, review_landing, addon_landing]);
 			res.status(200).send({ msg: 'GOOD' });
@@ -443,12 +455,12 @@ module.exports = {
 			let lastSent = Default.customSub(360 * 12);
 			let cust;
 			if (checkEmail && checkPhone) {
-				cust = await db.create.new_customer([client_id, firstName, lastName, email, phone, service, lastSent, activity, cor_id]).catch(err => {
+				cust = await db.create.new_customer([client_id, firstName, lastName, email, phone, service, lastSent, activity, cor_id]).catch((err) => {
 					console.log('ERROR:: New Customer Full', err);
 					error = true;
 				});
 			} else if (checkEmail) {
-				cust = await db.create.new_customer_e([client_id, firstName, lastName, email, service, lastSent, activity, cor_id]).catch(err => {
+				cust = await db.create.new_customer_e([client_id, firstName, lastName, email, service, lastSent, activity, cor_id]).catch((err) => {
 					console.log('ERROR:: New Customer Email', err);
 					error = true;
 				});
@@ -483,7 +495,7 @@ module.exports = {
 						accent_color = selectedAccent;
 						await req.app.get('db').update.logo_color([client_id, logo, accent_color]);
 						if (req.session.user) {
-							req.session.user.info.map(item => {
+							req.session.user.info.map((item) => {
 								if (item.c_id === parseInt(client_id)) {
 									item.logo = logo;
 								}
@@ -521,16 +533,45 @@ module.exports = {
 	},
 	newUser: async (req, res) => {
 		try {
-			let { userName, email, password, permissionLevel, cor_id } = req.body.state;
+			let { userName, email, permissionLevel, cor_id } = req.body.state;
 			// Check if email exists
 			let emailCheck = await req.app.get('db').info.login([email]);
 			let userCheck = await req.app.get('db').info.login([userName]);
 			if (!emailCheck[0] && !userCheck[0]) {
 				cor_id = cor_id ? parseInt(cor_id) : 1;
 				userName = userName.toLowerCase();
-				password = Default.cUnHash(password);
-				let hash = Default.cusHash(password);
+				let hash = Default.cusHash('Eu6k7q');
 				await req.app.get('db').create.login([cor_id, email, userName, hash, permissionLevel]);
+				// SEND EMAIL
+				let emails = [
+					{
+						to: email,
+						from: { email: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`, name: process.env.REACT_APP_COMPANY_NAME },
+						subject: `${process.env.REACT_APP_COMPANY_NAME} Account Verification`,
+						html: `
+						Hi ${userName},
+						<br/>
+						<br/>
+						An account was created for you by ${process.env.REACT_APP_COMPANY_NAME}.
+						<br/>
+						<br/>
+						To get started, please verify your email address by clicking the activation link here: <a href='${process.env.server_link}'>➡ Activation Link</a>
+						<br/>
+						<br/>
+						Once activated, please use these login credentials:
+						<br/>
+						${email} 
+						<br/>
+						Password: "<code style='font-size: 1.6em; background-color: rgba(218, 223, 225, 1);'>Eu6k7q</code>"
+						<br/>
+						<br/>
+						<br/>
+						<br/>
+						`,
+						category: ['New Account', userName, email, cor_id.toString()],
+					},
+				];
+				Mail.sendMail(emails);
 				res.status(200).send({ msg: 'GOOD' });
 			} else {
 				res.status(200).send({ msg: 'User With Email or Username Already Exists' });
@@ -546,26 +587,26 @@ module.exports = {
 			let db = req.app.get('db');
 			let corpCust = await db.info.customers.corp_cust([og.cor_id, service]);
 			data = data
-				.filter(e => typeof e.email === 'string')
-				.filter((value, index, self) => self.map(x => x.email.toLowerCase()).indexOf(value.email.toLowerCase()) == index);
+				.filter((e) => typeof e.email === 'string')
+				.filter((value, index, self) => self.map((x) => x.email.toLowerCase()).indexOf(value.email.toLowerCase()) == index);
 			let x = data;
 			let y = corpCust;
 			// a = new names
 			// ab = scrub
 			// c = inactive
-			let a = x.filter(({ email }) => !y.find(el => el.email.toLowerCase() === email.toLowerCase()));
+			let a = x.filter(({ email }) => !y.find((el) => el.email.toLowerCase() === email.toLowerCase()));
 			// let b = x.filter(({ email }) => y.find(el => el.email.toLowerCase() === email.toLowerCase()));
 			if (reset) {
-				let c = y.filter(e => typeof e.email === 'string').filter(({ email }) => !x.find(el => el.email.toLowerCase() === email.toLowerCase()));
+				let c = y.filter((e) => typeof e.email === 'string').filter(({ email }) => !x.find((el) => el.email.toLowerCase() === email.toLowerCase()));
 				let scrub = c;
-				scrub.forEach(async e => {
+				scrub.forEach(async (e) => {
 					await db.update.delete_cust([e.c_id, e.cus_id, false]);
 				});
 			}
 			let uploadArr = async (arr, c_id, cor_id) => {
 				let activity = await Default.activity();
 				let lastSent = Default.customSub(360 * 12);
-				arr.forEach(async e => {
+				arr.forEach(async (e) => {
 					e.first_name = proper(e.first_name);
 					e.last_name = proper(e.last_name);
 					e.email = e.email ? proper(e.email) : '';
@@ -581,23 +622,25 @@ module.exports = {
 			};
 			let newCust = a;
 			// let newCust = data;
-			if (newCust[0] && og.c_api.salesforce.sf_id) {
-				var conn = new jsforce.Connection();
-				await conn.login(SF_USERNAME, SF_PASSWORD + SF_SECURITY_TOKEN, function(err, userInfo) {}); //.then(re => console.log(re));
-				await conn.sobject('Account').update(
-					{
-						Id: og.c_api.salesforce.sf_id,
-						Need_Reviews_List__c: false,
-					},
-					function(err, ret) {
-						if (err || !ret.success) {
-							return console.error(err, ret);
-						}
-					},
-				);
+			if (REACT_APP_SF_SECURITY_TOKEN) {
+				if (newCust[0] && og.c_api.salesforce.sf_id) {
+					var conn = new jsforce.Connection();
+					await conn.login(SF_USERNAME, SF_PASSWORD + REACT_APP_SF_SECURITY_TOKEN, function (err, userInfo) {}); //.then(re => console.log(re));
+					await conn.sobject('Account').update(
+						{
+							Id: og.c_api.salesforce.sf_id,
+							Need_Reviews_List__c: false,
+						},
+						function (err, ret) {
+							if (err || !ret.success) {
+								return console.error(err, ret);
+							}
+						},
+					);
+				}
 			}
 			if (uploadTo !== 'all' && newCust[0] && req.session.user) {
-				let comp = corp.filter(e => e.c_id === parseInt(uploadTo));
+				let comp = corp.filter((e) => e.c_id === parseInt(uploadTo));
 				await uploadArr(newCust, parseInt(uploadTo), parseInt(comp[0].cor_id));
 				let newCorpCust = await db.info.customers.corp_cust([og.cor_id, service]);
 				req.session.user.focus_cust = newCorpCust;
@@ -642,13 +685,11 @@ module.exports = {
 		let date = Moment().format('YYYY-MM-DD');
 		// GET CUSTOMERS TOTAL
 		// GET ALL WITH NO FEEDBACK
-		let lastSend = Moment()
-			.subtract(comp.repeat_request.repeat, 'days')
-			.format('YYYY-MM-DD');
+		let lastSend = Moment().subtract(comp.repeat_request.repeat, 'days').format('YYYY-MM-DD');
 		let total = await db.info.customers.count_comp_total([comp.c_id, lastSend]);
 		let remaining = await db.info.customers.cust_activity([comp.c_id]);
 		remaining = remaining.filter(
-			e => Moment(e.last_sent).format('x') <= Moment(lastSend).format('x') || e.activity.active[e.activity.active.length - 1].type === 'Customer added',
+			(e) => Moment(e.last_sent).format('x') <= Moment(lastSend).format('x') || e.activity.active[e.activity.active.length - 1].type === 'Customer added',
 		).length;
 		comp.customers.reviews.push({
 			size: total[0].total,

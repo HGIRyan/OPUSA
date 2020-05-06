@@ -4,4 +4,5 @@ join report_setting as rs on rs.c_id = c.c_id
 join settings as s on s.c_id = c.c_id
 left join addon_emails as ae on ae.c_id = c.c_id
 left join review_email as re on re.c_id = c.c_id
-where c.cor_id = $1;
+where c.cor_id = $1
+order by c.c_id;

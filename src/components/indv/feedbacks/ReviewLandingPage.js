@@ -47,6 +47,7 @@ class ReviewLandingPage extends Component {
 			res = res.data;
 			if (res.msg === 'GOOD') {
 				let info = res.info[0];
+				document.title = `${info.company_name}`;
 				let resp = {
 					demoter: info.demoter_landing,
 					passive: info.passive_landing,
@@ -72,6 +73,7 @@ class ReviewLandingPage extends Component {
 					this.clickSite(item, index);
 				}
 			} else {
+				console.log('ERROR', rating, res);
 				// this.props.history.push('/feedback/rating/848/15096/8/email/1');
 			}
 		});
@@ -109,10 +111,12 @@ class ReviewLandingPage extends Component {
 					window.location.href = `https://www.google.com/maps/search/?api=1&query=Google&query_place_id=${this.state.og.place_id}`;
 				} else {
 					this.setState({ msg: res.msg });
+					link = link.includes('http') ? link : `http://${link}`;
 					window.location.href = link;
 				}
 			} else {
 				this.setState({ msg: res.msg });
+				link = link.includes('http') ? link : `http://${link}`;
 				window.location.href = link;
 			}
 		});
@@ -221,7 +225,6 @@ class ReviewLandingPage extends Component {
 											return process.env.REACT_APP_TRUSTPILOT_LOGO;
 										}
 									};
-									console.log(process.env.REACT_APP_EMPTY_LOGO);
 									return (
 										<div
 											key={i}

@@ -20,6 +20,7 @@
 .env
 server/Review_Report.pdf
 server/controller/Review_Report.pdf
+server/controller/CSV_Report.csv
 server/controller/gmb_18.csv
 server/controller/passport.js
 npm-debug.log*

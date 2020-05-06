@@ -27,6 +27,7 @@ class CustNew extends Component {
 		};
 	}
 	componentDidMount() {
+		document.title = `New Customer`;
 		if (Array.isArray(this.props.location.state.info)) {
 			let { client_id } = this.props.match.params;
 			if (this.props.location.state.info) {

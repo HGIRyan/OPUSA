@@ -34,7 +34,7 @@ class Admin extends Component {
 		// let subSubItem = { width: !bigWidth ? '3vw' : '10vw', height: '3.5vh', paddingLeft: '5%', margin: '1% 0' };
 		if (this.props.props.view) {
 			let { sect, data } = this.props.props.view;
-			let loca = this.props.props ? this.props.props.props.location.pathname : '/Home';
+			let loca = this.props.props ? this.props.props.props.location.pathname : '/home/0/1';
 			let user = this.props.props ? this.props.props.props.location.state.userName : 'userName';
 			// let industry = this.props.props.props.location.state.industry;
 			// prettier-ignore
@@ -42,7 +42,7 @@ class Admin extends Component {
         } : data;
 			data = Array.isArray(data) ? data[0] : data;
 			let { cor_id } = this.props.props.match;
-			let locations = sect === 'indv' && data ? this.props.props.props.location.state.info.filter(e => parseInt(e.cor_id) === parseInt(cor_id)) : null;
+			let locations = sect === 'indv' && data ? this.props.props.props.location.state.info.filter((e) => parseInt(e.cor_id) === parseInt(cor_id)) : null;
 			let lState = this.props.props.props.location.state;
 			if (sect === 'all') {
 				return (
@@ -50,9 +50,9 @@ class Admin extends Component {
 						{/* HOME */}
 						<div style={{ height: '1.9vh' }} />
 						<SideBarLink
-							to={{ pathname: '/home', state: lState }}
+							to={{ pathname: '/home/0/1', state: lState }}
 							style={item}
-							className={`${loca === '/home' ? 'sidebar-color' : 'tertiary-color'} sidebar-hover `}
+							className={`${loca.includes('/home') ? 'sidebar-color' : 'tertiary-color'} sidebar-hover `}
 						>
 							<i className="material-icons">home_work</i>
 							{bigWidth ? (
@@ -67,8 +67,8 @@ class Admin extends Component {
 						{/* REPORTS */}
 						<SideBarLink
 							style={item}
-							className={`${loca === '/home/report/review' ? 'sidebar-color' : 'tertiary-color'}  sidebar-hover`}
-							to={{ pathname: '/home/report/review', state: lState }}
+							className={`${loca === '/report/review' ? 'sidebar-color' : 'tertiary-color'}  sidebar-hover`}
+							to={{ pathname: '/report/review', state: lState }}
 						>
 							<i className="material-icons">bar_chart</i>
 							{bigWidth ? <h6>Review Report</h6> : ''}
@@ -109,7 +109,7 @@ class Admin extends Component {
                         {this.multiLoc(data, info)}
                     </NoDiv> : null : null : null} */}
 						<hr />
-						{user === 'rhutchison' || user === 'biggdogg' ? (
+						{user === 'rhutchison' || user === 'biggdogg' || 'dev' ? (
 							<NoDiv direction="column">
 								<SideBarLink
 									style={item}
@@ -133,17 +133,19 @@ class Admin extends Component {
 								>
 									{bigWidth ? 'Lead Landing' : 'LL'}
 								</SideBarLink>
-								<SideBarLink
-									style={item}
-									className="tertiary-color sidebar-hover"
-									indent="2.5%"
-									to={{
-										pathname: `/migration`,
-										state: lState,
-									}}
-								>
-									{bigWidth ? 'Migration' : 'M'}
-								</SideBarLink>
+								{process.env.REACT_APP_SF_SECURITY_TOKEN ? (
+									<SideBarLink
+										style={item}
+										className="tertiary-color sidebar-hover"
+										indent="2.5%"
+										to={{
+											pathname: `/migration`,
+											state: lState,
+										}}
+									>
+										{bigWidth ? 'Migration' : 'M'}
+									</SideBarLink>
+								) : null}
 								<SideBarLink
 									style={item}
 									className="tertiary-color sidebar-hover"
@@ -176,9 +178,9 @@ class Admin extends Component {
 						<hr />
 						{/* INDV SIDEBAR */}
 						<SideBarLink
-							to={{ pathname: '/home', state: lState }}
+							to={{ pathname: '/home/0/1', state: lState }}
 							style={item}
-							className={`${loca === '/home' ? 'sidebar-color' : 'tertiary-color'} sidebar-hover `}
+							className={`${loca.includes('/home') ? 'sidebar-color' : 'tertiary-color'} sidebar-hover `}
 						>
 							<i className="material-icons">home_work</i>
 							{bigWidth ? <h6 className="">Home</h6> : ''}
@@ -398,7 +400,7 @@ class Admin extends Component {
 									<i className="material-icons">perm_data_setting</i>
 									<h6>{width >= 1500 ? 'General Settings' : ''}</h6>
 								</SideBarLink>
-								<SideBarLink
+								{/* <SideBarLink
 									indent="5%"
 									style={item}
 									className={`${loca.includes(`/client-dash/${data.cor_id}/insight-history/${data.c_id}`) ? 'sidebar-color' : 'tertiary-color'}  sidebar-hover`}
@@ -409,7 +411,7 @@ class Admin extends Component {
 								>
 									<i className="material-icons">grain</i>
 									<h6>{width >= 1500 ? 'GMB Insights' : ''}</h6>
-								</SideBarLink>
+								</SideBarLink> */}
 								<SideBarLink
 									indent="5%"
 									style={item}

@@ -1,2 +1,2 @@
 select * from defaults 
-where industry ilike $1 ;
+where lower(industry) ilike lower($1) ;

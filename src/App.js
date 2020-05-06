@@ -9,37 +9,42 @@ import axios from 'axios';
 import { LoadingWrapper } from './utilities';
 
 // COMPONENT IMPORTS
-import Login from './components/login/Login';
-import HomePage from './components/all/HomePage';
-import AddBusiness from './components/all/AddBusiness';
-import Defaults from './components/all/Defaults';
-import ReviewReport from './components/all/ReviewReport';
-import TypeReport from './components/all/TypeReport';
-import ClientDash from './components/indv/Dash';
-import ClientReviewReport from './components/indv/ReviewReport';
-import ClientTypeReport from './components/indv/TypeReport';
-import ClientGInsight from './components/indv/GInsights';
-import ClientSettings from './components/indv/Settings';
-import ClientBrandSettings from './components/indv/BrandSettings';
-import ReviewLinks from './components/indv/ReviewLinks';
-import BusinessDetails from './components/indv/BusinessDetails';
-import ReviewEmails from './components/indv/ReviewEmails';
-import TypeEmails from './components/indv/TypeEmails';
-import ClientUploads from './components/indv/ClientUploads';
-import CustView from './components/indv/customer/CustView';
-import CustNew from './components/indv/customer/CustNew';
-import ReviewLandingPage from './components/indv/feedbacks/ReviewLandingPage';
-import TypeLandingPage from './components/indv/feedbacks/TypeLandingPage';
-import AddLocation from './components/indv/AddLocation';
-import Migration from './components/dev/Migration';
-import GMBPost from './components/dev/GMBPost';
-import UserCreate from './components/dev/UserCreate';
-import AccountDetails from './components/all/UserDetails';
-import Unsubscribe from './components/all/function/Unsubscribe';
-import GMBDetails from './components/all/GMBDetails';
+import {
+	Login,
+	HomePage,
+	AddBusiness,
+	AddLocation,
+	Defaults,
+	ReviewReport,
+	ClientDash,
+	ClientReviewReport,
+	ClientTypeReport,
+	ClientGInsight,
+	ClientSettings,
+	ClientBrandSettings,
+	ReviewLinks,
+	BusinessDetails,
+	ReviewEmails,
+	TypeEmails,
+	ClientUploads,
+	CustView,
+	CustNew,
+	ReviewLandingPage,
+	TypeLandingPage,
+	Migration,
+	GMBPost,
+	UserCreate,
+	AccountDetails,
+	Unsubscribe,
+	GMBDetails,
+	HighLevelAnal,
+} from './components/Exports';
+import Modal from 'react-materialize/lib/Modal';
 
 import { createBrowserHistory } from 'history';
 const history = createBrowserHistory();
+const { detect } = require('detect-browser');
+const browser = detect();
 
 const Dev = true;
 class App extends Component {
@@ -55,9 +60,11 @@ class App extends Component {
 	}
 	abortController = new AbortController();
 	async componentDidMount() {
-		// if (Dev) {
-		// 	document.title = `DEV - ${document.title}`;
-		// }
+		if (this.props.location.pathname === '/home') {
+			console.log(this.props.location.pathname);
+			history.push('/home/0/1', this.props.location.state);
+			window.location.reload();
+		}
 		if (this.props.location.state) {
 			if (this.props.location.state.user) {
 				if (moment().format('x') >= moment(this.props.location.state.expires).format('x')) {
@@ -193,16 +200,8 @@ class App extends Component {
 			// prettier-ignore
 			return (
 				<div>
-					<h1>
-						This Content is blocked in your contry of <br />
-						<code>United States Of America</code>
-					</h1>
-					<br /><br />
-					<h3>
-						Also Trump 2020 <br /> <code>#MAGA</code>
-					</h3>
 					<br /><br /><br /><br /><br />
-					<code>https://op.onlinepresenceusa.com{location.pathname}</code>
+					<code>https://ll.liftlocal.com{location.pathname}</code>
 					{' _ _ _ _ _ '}Cannot be found
 					<hr />
 					404 page
@@ -212,7 +211,7 @@ class App extends Component {
 					<button
 						className="btn primary-color primary-hover"
 						onClick={() => {
-							history.push('/');
+							history.push( '/', {});
 						}}
 					>
 						Login
@@ -231,6 +230,20 @@ class App extends Component {
 		};
 		return (
 			<div className="App">
+				<Modal
+					open={browser.name !== 'chrome' && !this.props.location.pathname.includes('feedback') && process.env.REACT_APP_BROWSER_BLOCK === 'true'}
+					options={{
+						dismissible: false,
+					}}
+					actions={<div></div>}
+					header="BROWSER NOT SUPPORTED"
+				>
+					We're sorry, but this browser is not supported by Lift Local's Application.
+					<br /> To get the best experience using Lift Local's Application, we recommend that you switch to using Chrome.
+					<br />
+					<br />
+					<a href="https://www.google.com/chrome/">DOWNLOAD CHROME</a>
+				</Modal>
 				<LoadingWrapper loading={loading}>
 					<Switch>
 						<Route exact path="/" component={Login} />
@@ -240,16 +253,17 @@ class App extends Component {
 						<AdminRoute path="/migration" component={Migration} />
 						<AdminRoute path="/gmbpost" component={GMBPost} />
 						<AdminRoute path="/user-create" component={UserCreate} />
-						<AdminRoute exact path="/home" component={HomePage} />
-						<AdminRoute exact path="/home/:cor_id" component={HomePage} />
+						{/* <AdminRoute exact path="/home" component={HomePage} /> */}
+						<AdminRoute exact path="/home/:cor_id/:page" component={HomePage} />
 						<AdminRoute exact path="/addbusiness/:industry" component={AddBusiness} />
 						<AdminRoute exact path="/addlocation/:cor_id" component={AddLocation} />
 						<AdminRoute exact path="/addbusiness/" component={AddBusiness} />
 						{/* <AdminRoute exact path="/home/defaults" component={Defaults} /> */}
-						<AdminRoute path="/home/:type/defaults" component={Defaults} />
-						<AdminRoute path="/home/report/review" component={ReviewReport} />
-						<AdminRoute path="/home/report/:type" component={TypeReport} />
-						<AdminRoute path="/home/gmb/details" component={GMBDetails} />
+						<AdminRoute path="/default/:type" component={Defaults} />
+						<AdminRoute path="/report/review" component={ReviewReport} />
+						<AdminRoute path="/HighLevelAnal" component={HighLevelAnal} />
+						{/* <AdminRoute path="/home/report/:type" component={TypeReport} /> */}
+						<AdminRoute path="/gmb/details" component={GMBDetails} />
 						{/* You Have No Permission
                   <br />
                         <Link to='/'>Re Log In</Link> */}
