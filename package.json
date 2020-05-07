@@ -81,7 +81,7 @@
 		]
 	},
 	"main": "server/index.js",
-	"proxy": "http://localhost:4020",
+	"proxy": "http://localhost:4028",
 	"devDependencies": {
 		"eslint": "^6.4.1",
 		"eslint-config-airbnb": "^18.0.1",
