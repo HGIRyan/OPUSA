@@ -31,7 +31,7 @@ class CustNew extends Component {
 		if (Array.isArray(this.props.location.state.info)) {
 			let { client_id } = this.props.match.params;
 			if (this.props.location.state.info) {
-				let item = this.props.location.state.info.filter(item => item.c_id === parseInt(client_id));
+				let item = this.props.location.state.info.filter((item) => item.c_id === parseInt(client_id));
 				if (item[0]) {
 					this.setState({ og: item[0] });
 				}
@@ -61,15 +61,15 @@ class CustNew extends Component {
 		let { checkEmail, checkFirst, checkLast, checkPhone } = this.state;
 		let { client_id, cor_id } = this.props.match.params;
 		let state = this.state;
-		if (checkFirst && checkLast && (checkPhone || (checkEmail && Array.isArray(this.props.history.location.state.focus_cust)))) {
-			await axios.post(`/api/new/customer/${client_id}/${cor_id}`, { state }).then(async res => {
+		if (checkFirst && checkLast && (checkPhone || checkEmail)) {
+			await axios.post(`/api/new/customer/${client_id}/${cor_id}`, { state }).then(async (res) => {
 				if (res.data.msg === 'GOOD') {
 					if (this.state.send) {
 						let selected = [res.data.cust[0]];
 						let type = { subject: 's_subject', email: 's' };
-						let bus = this.props.location.state.info.filter(item => item.c_id === parseInt(client_id));
+						let bus = this.props.location.state.info.filter((item) => item.c_id === parseInt(client_id));
 						bus = Array.isArray(bus) ? bus[0] : bus;
-						await axios.post('/api/request/send', { selected, bus, type }).then(async res => {
+						await axios.post('/api/request/send', { selected, bus, type }).then(async (res) => {
 							if (res.data.msg === 'GOOD') {
 								alert(`Sent ${res.data.sent} email${res.data.sent > 1 ? 's' : ''}`);
 							} else {
@@ -78,13 +78,20 @@ class CustNew extends Component {
 						});
 					}
 					this.setState({ saving: false });
-					this.props.history.location.state.focus_cust.push(res.data.cust[0]);
+					if (Array.isArray(this.props.history.location.state.focus_cust)) {
+						this.props.history.location.state.focus_cust.push(res.data.cust[0]);
+					} else {
+						this.props.history.location.state.focus_cust = [res.data.cust[0]];
+					}
 					this.props.history.push({ pathname: `/client-dash/${cor_id}/${client_id}`, state: this.props.history.location.state });
 				} else {
 					this.setState({ saving: false });
 					alert(res.data.msg);
 				}
 			});
+		} else {
+			alert('Error or Incomplete Data');
+			this.setState({ saving: false });
 		}
 	}
 
@@ -125,7 +132,7 @@ class CustNew extends Component {
 												type="text"
 												className="validate"
 												value={this.state.firstName}
-												onChange={e => this.setState({ firstName: e.target.value })}
+												onChange={(e) => this.setState({ firstName: e.target.value })}
 											/>
 											<label htmlFor="first_name">First Name: </label>
 										</div>
@@ -135,7 +142,7 @@ class CustNew extends Component {
 												type="text"
 												className="validate"
 												value={this.state.lastName}
-												onChange={e => this.setState({ lastName: e.target.value })}
+												onChange={(e) => this.setState({ lastName: e.target.value })}
 											/>
 											<label htmlFor="last_name">Last Name: </label>
 										</div>
@@ -144,7 +151,7 @@ class CustNew extends Component {
 										<i className="material-icons prefix" style={iconStyle}>
 											email
 										</i>
-										<input id="email" type="email" className="validate" value={this.state.email} onChange={e => this.setState({ email: e.target.value })} />
+										<input id="email" type="email" className="validate" value={this.state.email} onChange={(e) => this.setState({ email: e.target.value })} />
 										<label htmlFor="email">Email: </label>
 										<span className="helper-text" data-error="Invalid Email Format" data-success="" />
 									</div>
@@ -158,7 +165,7 @@ class CustNew extends Component {
 											type="tel"
 											className="validate"
 											value={this.state.phone}
-											onChange={e => this.setState({ phone: e.target.value })}
+											onChange={(e) => this.setState({ phone: e.target.value })}
 										/>
 										<label htmlFor="icon_telephone">Phone: </label>
 									</div>
@@ -175,13 +182,13 @@ class CustNew extends Component {
 								<NoDiv width="50%" height="45vh" direction="column" align="flex-start" padding="2.5%">
 									<form className="col" style={{ width: '60%', margin: '2.5% 0' }}>
 										<div className="input-field">
-											<textarea id="textarea1" className="materialize-textarea" onChange={e => this.setState({ notes: e.target.value })}></textarea>
+											<textarea id="textarea1" className="materialize-textarea" onChange={(e) => this.setState({ notes: e.target.value })}></textarea>
 											<label htmlFor="textarea1">Customer Notes</label>
 										</div>
 									</form>
 									<div className="input-field" style={{ width: '60%' }}>
 										<Select
-											onChange={e => this.setState({ service: e.target.value })}
+											onChange={(e) => this.setState({ service: e.target.value })}
 											defaultValue={this.state.service}
 											style={{ margin: '0 5%', fontSize: '.75em' }}
 											className="styled-select"

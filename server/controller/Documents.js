@@ -27,16 +27,17 @@ module.exports = {
 			} else if (reportType === 'csv') {
 				const writeStream = fs.createWriteStream(`${__dirname}/CSV_Report.csv`);
 				writeStream.write(
-					`Customer_Id, First Name, Last Name, Email, Rating, Feedback, Recieved, Site Clicked, Unsubscribe, Activity, Last Sent, Last Email \n`,
+					`Customer_Id, First Name, Last Name, Email, Rating, Feedback, Recieved, Site Clicked, Unsubscribe, Activity, Last Sent, Last Email, date_added \n`,
 				);
 				req.body.all.forEach((e) => {
 					let { first_name, last_name, email, last_sent, activity, date_added, active, feedback_text, rating, click_site, last_email, opened_time } = e;
 					writeStream.write(
-						`${e.cus_id}, ${first_name}, ${last_name}, ${email}, ${rating ? rating : ''}, ${feedback_text && feedback_text !== 'N/A' ? feedback_text : ''}, ${
-							opened_time ? opened_time : ''
-						}, ${click_site ? click_site : ''}, ${active ? '' : 'Unsubscribed'}, ${JSON.stringify(activity.active).replace(/,/g, '-')}, ${
-							last_sent === '2005-05-25' ? 'NOT SENT' : last_sent
-						}, ${last_email ? last_email : ''} \n`,
+						`${e.cus_id}, ${first_name}, ${last_name}, ${email}, ${rating ? rating : ''}, ${
+							feedback_text && feedback_text !== 'N/A' ? feedback_text.replace(/,/g, '-').replace(/\n/g, ' ') : ''
+						}, ${opened_time ? opened_time : ''}, ${click_site ? click_site : ''}, ${active ? '' : 'Unsubscribed'}, ${JSON.stringify(activity.active).replace(
+							/,/g,
+							'-',
+						)}, ${last_sent === '2005-05-25' ? 'NOT SENT' : last_sent}, ${last_email ? last_email : ''}, ${date_added ? date_added : ''} \n`,
 					);
 				});
 				res.status(200).send({ msg: 'GOOD' });

@@ -97,11 +97,13 @@ class HomePage extends Component {
 
 	async CompanyInfo(info, comp) {
 		let { cor_id } = this.props.match.params;
+		let inactive = info.filter((e) => !e.active);
 		info = info
 			.filter((e) => e.active)
 			.sort((a, b) => (a.reviews.reviews[a.reviews.reviews.length - 1].newReviews > b.reviews.reviews[b.reviews.reviews.length - 1].newReviews ? 1 : -1))
 			.sort((a, b) => (a.customers.reviews[a.customers.reviews.length - 1].size < b.customers.reviews[b.customers.reviews.length - 1].size ? 1 : -1))
-			.sort((a, b) => (a.customers.reviews[a.customers.reviews.length - 1].remaining > b.customers.reviews[b.customers.reviews.length - 1].remaining ? 1 : -1));
+			.sort((a, b) => (a.customers.reviews[a.customers.reviews.length - 1].remaining > b.customers.reviews[b.customers.reviews.length - 1].remaining ? 1 : -1))
+			.concat(inactive);
 		if (cor_id !== '0') {
 			info = info.filter((e) => e.cor_id === parseInt(cor_id)).sort((a, b) => (a.c_id > b.c_id ? 1 : -1));
 		}

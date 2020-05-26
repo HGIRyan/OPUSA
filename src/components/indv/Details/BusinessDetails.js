@@ -172,8 +172,9 @@ class BusinessDetails extends Component {
 	async GoogleDetails(placeId) {
 		this.setState({ searching: true });
 		await axios.post('/api/google/place/placeid/details', { placeId }).then((res) => {
+			console.log(res.data);
 			if (res.data.msg === 'GOOD') {
-				if (res.data.data.rating) {
+				if (res.data.data) {
 					let { og } = this.state;
 					let data = res.data.data;
 					let address = data.formatted_address.split(',');
@@ -417,7 +418,7 @@ class BusinessDetails extends Component {
 
 								<div style={{ display: 'flex', width: '65vw' }} className="card">
 									<div style={{ display: 'flex', flexDirection: 'column', width: '45%', alignItems: 'center', marginRight: '5%' }}>
-										<h5>Bussiness Info</h5>
+										<h5>Business Info</h5>
 										<hr />
 										<div className="input-field" style={{ width: '70%' }}>
 											<h2 style={{ margin: '0' }}>

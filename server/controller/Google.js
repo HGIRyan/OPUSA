@@ -41,19 +41,21 @@ module.exports = {
 			searchTerm = searchTerm.replace(/ /g, '+');
 			await axios
 				.get(`https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${searchTerm}&components=country:us&key=${GOOGLE_PLACE_API}`)
-				.then(resp => {
+				.then((resp) => {
 					if (resp.status === 200) {
 						if (resp.data.status === 'OK' || resp.data.status === 'ZERO_RESULTS') {
 							let data = resp.data.predictions;
 							res.status(200).send({ msg: 'GOOD', data });
 						} else {
+							console.log(resp.data);
 							res.status(200).send({ msg: 'Not Good, Some Error Occured. Contact your IT Department for details' });
 						}
 					} else {
+						console.log(resp.status);
 						res.status(200).send({ msg: 'Super Not Good, Some Error Occured. Contact your IT Department for details' });
 					}
 				})
-				.catch(err => console.log('ERROR::', err));
+				.catch((err) => console.log('ERROR::', err));
 		} catch (e) {
 			Err.emailMsg(e, 'Google/Search');
 		}
@@ -63,7 +65,7 @@ module.exports = {
 			let { placeId } = req.body;
 			await axios
 				.get(`https://maps.googleapis.com/maps/api/place/details/json?placeid=${placeId}&key=${GOOGLE_PLACE_API}`)
-				.then(resp => {
+				.then((resp) => {
 					if (resp.status === 200) {
 						if (resp.data.status === 'OK') {
 							data = resp.data.result;
@@ -71,30 +73,30 @@ module.exports = {
 						}
 					}
 				})
-				.catch(err => console.log('ERROR:: ', err));
+				.catch((err) => console.log('ERROR:: ', err));
 		} catch (e) {
 			Err.emailMsg(e, 'Google/Details');
 		}
 	},
-	gmbLocationList: async app => {
+	gmbLocationList: async (app) => {
 		// try {
 		console.log('Getting Locations');
 		let times = 0;
 		let pageToken = '';
 		let locations = [];
 		let loop = async () => {
-			let request = async npt => {
+			let request = async (npt) => {
 				await axios
 					.get(`https://mybusiness.googleapis.com/v4/accounts/${AccountID}/locations${npt ? `?pageToken=${npt}` : ''}`, {
 						headers: {
 							Authorization: `Bearer ${GMBBearer}`,
 						},
 					})
-					.then(res => {
+					.then((res) => {
 						times = times + 1;
 						pageToken = res.data.nextPageToken ? res.data.nextPageToken : '';
 						console.log('Page:', times, 'Locations:', res.data.locations.length);
-						res.data.locations.map(async e => {
+						res.data.locations.map(async (e) => {
 							await app.get('db').gmb.location_id([e.name.split('/')[3], e.locationName, e.locationState.isVerified]);
 							// locations.push({ locationid: e.name.split('/')[3] });
 						});
@@ -117,9 +119,9 @@ module.exports = {
 		// 	Err.emailMsg(error, 'Google/gmbLocationList');
 		// }
 	},
-	gmbInsights: async app => {
+	gmbInsights: async (app) => {
 		let accounts = await app.get('db').gmb.all_accounts([]);
-		accounts = accounts.filter(e => e.insights === null && e.verified !== null);
+		accounts = accounts.filter((e) => e.insights === null && e.verified !== null);
 		let insights = async ({ location_id, startTime, endTime }) => {
 			return await axios
 				.post(
@@ -160,15 +162,15 @@ module.exports = {
 						},
 					},
 				)
-				.then(res => {
+				.then((res) => {
 					if (res.data.locationMetrics) {
 						let data = res.data.locationMetrics[0].metricValues;
-						let website = data.filter(e => e.metric === 'ACTIONS_WEBSITE');
-						let calls = data.filter(e => e.metric === 'ACTIONS_PHONE');
-						let direct = data.filter(e => e.metric === 'QUERIES_DIRECT');
-						let indirect = data.filter(e => e.metric === 'QUERIES_INDIRECT');
-						let chain = data.filter(e => e.metric === 'QUERIES_CHAIN');
-						let views = data.filter(e => e.metric === 'VIEWS_SEARCH');
+						let website = data.filter((e) => e.metric === 'ACTIONS_WEBSITE');
+						let calls = data.filter((e) => e.metric === 'ACTIONS_PHONE');
+						let direct = data.filter((e) => e.metric === 'QUERIES_DIRECT');
+						let indirect = data.filter((e) => e.metric === 'QUERIES_INDIRECT');
+						let chain = data.filter((e) => e.metric === 'QUERIES_CHAIN');
+						let views = data.filter((e) => e.metric === 'VIEWS_SEARCH');
 						website = website[0] ? website[0].totalValue.value : null;
 						calls = calls[0] ? calls[0].totalValue.value : null;
 						direct = direct[0] ? direct[0].totalValue.value : null;
@@ -197,10 +199,7 @@ module.exports = {
 				console.log(e.location_name);
 				for (let i = 17; i > 0; i--) {
 					setTimeout(async () => {
-						let startTime = moment()
-							.subtract(i, 'months')
-							.date(1)
-							.format();
+						let startTime = moment().subtract(i, 'months').date(1).format();
 						let endTime = moment()
 							.subtract(i - 1, 'months')
 							.date(1)
@@ -218,24 +217,24 @@ module.exports = {
 			}, 10000 * ind);
 		}
 	},
-	gmbCSV: async app => {
+	gmbCSV: async (app) => {
 		let accounts = await app.get('db').gmb.all_accounts([]);
-		accounts = accounts.filter(e => e.insights !== null && e.verified !== null && e.insights.insights[0]);
+		accounts = accounts.filter((e) => e.insights !== null && e.verified !== null && e.insights.insights[0]);
 		let dates = [];
 		let startDates = [];
-		await accounts[0].insights.insights.map(e => {
+		await accounts[0].insights.insights.map((e) => {
 			let range = e.range.startTime.split('T')[0] + ' - ' + e.range.endTime.split('T')[0];
 			startDates.push(e.range.startTime.split('T')[0]);
 			dates.push(range);
 		});
 		startDates = startDates.reverse();
 		const writeStream = fs.createWriteStream(`${__dirname}/gmb_18.csv`);
-		writeStream.write(` , , , ${dates.reverse().map(e => e + ',' + ',' + ',' + ',' + ',' + ',')}\n`);
-		writeStream.write(`Verified, location_id, location_name, ${dates.reverse().map(e => ' website, calls, direct, indirect, chain, views, total')} \n`);
+		writeStream.write(` , , , ${dates.reverse().map((e) => e + ',' + ',' + ',' + ',' + ',' + ',')}\n`);
+		writeStream.write(`Verified, location_id, location_name, ${dates.reverse().map((e) => ' website, calls, direct, indirect, chain, views, total')} \n`);
 		// console.log(`Verified, location_id, location_name, ${dates.reverse().map(e => ' website, calls, direct, indirect, chain, views, total')} \n`);
 		accounts
 			// .slice( 0, 1 )
-			.map(e => {
+			.map((e) => {
 				let emptObj = {
 					website: 0,
 					calls: 0,
@@ -247,56 +246,56 @@ module.exports = {
 				let name = e.location_name.replace(/,/g, '');
 				let id = e.location_id;
 				let verified = e.verified ? true : false;
-				let one = e.insights.insights.filter(e => e.range.startTime.includes('2018-09-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2018-09-01'))[0]
+				let one = e.insights.insights.filter((e) => e.range.startTime.includes('2018-09-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2018-09-01'))[0]
 					: emptObj;
-				let two = e.insights.insights.filter(e => e.range.startTime.includes('2018-10-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2018-10-01'))[0]
+				let two = e.insights.insights.filter((e) => e.range.startTime.includes('2018-10-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2018-10-01'))[0]
 					: emptObj;
-				let three = e.insights.insights.filter(e => e.range.startTime.includes('2018-11-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2018-11-01'))[0]
+				let three = e.insights.insights.filter((e) => e.range.startTime.includes('2018-11-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2018-11-01'))[0]
 					: emptObj;
-				let four = e.insights.insights.filter(e => e.range.startTime.includes('2018-12-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2018-12-01'))[0]
+				let four = e.insights.insights.filter((e) => e.range.startTime.includes('2018-12-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2018-12-01'))[0]
 					: emptObj;
-				let five = e.insights.insights.filter(e => e.range.startTime.includes('2019-01-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-01-01'))[0]
+				let five = e.insights.insights.filter((e) => e.range.startTime.includes('2019-01-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-01-01'))[0]
 					: emptObj;
-				let six = e.insights.insights.filter(e => e.range.startTime.includes('2019-02-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-02-01'))[0]
+				let six = e.insights.insights.filter((e) => e.range.startTime.includes('2019-02-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-02-01'))[0]
 					: emptObj;
-				let sev = e.insights.insights.filter(e => e.range.startTime.includes('2019-03-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-03-01'))[0]
+				let sev = e.insights.insights.filter((e) => e.range.startTime.includes('2019-03-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-03-01'))[0]
 					: emptObj;
-				let ei = e.insights.insights.filter(e => e.range.startTime.includes('2019-04-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-04-01'))[0]
+				let ei = e.insights.insights.filter((e) => e.range.startTime.includes('2019-04-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-04-01'))[0]
 					: emptObj;
-				let nine = e.insights.insights.filter(e => e.range.startTime.includes('2019-05-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-05-01'))[0]
+				let nine = e.insights.insights.filter((e) => e.range.startTime.includes('2019-05-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-05-01'))[0]
 					: emptObj;
-				let ten = e.insights.insights.filter(e => e.range.startTime.includes('2019-06-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-06-01'))[0]
+				let ten = e.insights.insights.filter((e) => e.range.startTime.includes('2019-06-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-06-01'))[0]
 					: emptObj;
-				let elev = e.insights.insights.filter(e => e.range.startTime.includes('2019-07-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-07-01'))[0]
+				let elev = e.insights.insights.filter((e) => e.range.startTime.includes('2019-07-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-07-01'))[0]
 					: emptObj;
-				let twel = e.insights.insights.filter(e => e.range.startTime.includes('2019-08-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-08-01'))[0]
+				let twel = e.insights.insights.filter((e) => e.range.startTime.includes('2019-08-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-08-01'))[0]
 					: emptObj;
-				let thirt = e.insights.insights.filter(e => e.range.startTime.includes('2019-09-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-09-01'))[0]
+				let thirt = e.insights.insights.filter((e) => e.range.startTime.includes('2019-09-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-09-01'))[0]
 					: emptObj;
-				let fourt = e.insights.insights.filter(e => e.range.startTime.includes('2019-10-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-10-01'))[0]
+				let fourt = e.insights.insights.filter((e) => e.range.startTime.includes('2019-10-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-10-01'))[0]
 					: emptObj;
-				let fift = e.insights.insights.filter(e => e.range.startTime.includes('2019-11-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-11-01'))[0]
+				let fift = e.insights.insights.filter((e) => e.range.startTime.includes('2019-11-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-11-01'))[0]
 					: emptObj;
-				let sixt = e.insights.insights.filter(e => e.range.startTime.includes('2019-12-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2019-12-01'))[0]
+				let sixt = e.insights.insights.filter((e) => e.range.startTime.includes('2019-12-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2019-12-01'))[0]
 					: emptObj;
-				let sevent = e.insights.insights.filter(e => e.range.startTime.includes('2020-01-01'))[0]
-					? e.insights.insights.filter(e => e.range.startTime.includes('2020-01-01'))[0]
+				let sevent = e.insights.insights.filter((e) => e.range.startTime.includes('2020-01-01'))[0]
+					? e.insights.insights.filter((e) => e.range.startTime.includes('2020-01-01'))[0]
 					: emptObj;
 				writeStream.write(`${verified}, ${id}, ${name}, ${one.website}, ${one.calls}, ${one.direct}, ${one.indirect}, ${one.chain}, ${one.views}, ${one.total}, ${two.website}, ${two.calls}, ${two.direct}, ${two.indirect}, ${two.chain}, ${two.views}, ${two.total}, ${three.website}, ${three.calls}, ${three.direct}, ${three.indirect}, ${three.chain}, ${three.views}, ${three.total}, ${four.website}, ${four.calls}, ${four.direct}, ${four.indirect}, ${four.chain}, ${four.views}, ${four.total}, ${five.website}, ${five.calls}, ${five.direct}, ${five.indirect}, ${five.chain}, ${five.views}, ${five.total}, ${six.website}, ${six.calls}, ${six.direct}, ${six.indirect}, ${six.chain}, ${six.views}, ${six.total}, ${sev.website}, ${sev.calls}, ${sev.direct}, ${sev.indirect}, ${sev.chain}, ${sev.views}, ${sev.total}, ${ei.website}, ${ei.calls}, ${ei.direct}, ${ei.indirect}, ${ei.chain}, ${ei.views}, ${ei.total}, ${nine.website}, ${nine.calls}, ${nine.direct}, ${nine.indirect}, ${nine.chain}, ${nine.views}, ${nine.total}, ${ten.website}, ${ten.calls}, ${ten.direct}, ${ten.indirect}, ${ten.chain}, ${ten.views}, ${ten.total}, ${elev.website}, ${elev.calls}, ${elev.direct}, ${elev.indirect}, ${elev.chain}, ${elev.views}, ${elev.total}, ${twel.website}, ${twel.calls}, ${twel.direct}, ${twel.indirect}, ${twel.chain}, ${twel.views}, ${twel.total}, ${thirt.website}, ${thirt.calls}, ${thirt.direct}, ${thirt.indirect}, ${thirt.chain}, ${thirt.views}, ${thirt.total}, ${fourt.website}, ${fourt.calls}, ${fourt.direct}, ${fourt.indirect}, ${fourt.chain}, ${fourt.views}, ${fourt.total}, ${fift.website}, ${fift.calls}, ${fift.direct}, ${fift.indirect}, ${fift.chain}, ${fift.views}, ${fift.total}, ${sixt.website}, ${sixt.calls}, ${sixt.direct}, ${sixt.indirect}, ${sixt.chain}, ${sixt.views}, ${sixt.total}, ${sevent.website}, ${sevent.calls}, ${sevent.direct}, ${sevent.indirect}, ${sevent.chain}, ${sevent.views}, ${sevent.total}
 			`);
@@ -359,15 +358,15 @@ module.exports = {
 						},
 					},
 				)
-				.then(res => {
+				.then((res) => {
 					if (res.data.locationMetrics) {
 						let data = res.data.locationMetrics[0].metricValues;
-						let website = data.filter(e => e.metric === 'ACTIONS_WEBSITE');
-						let calls = data.filter(e => e.metric === 'ACTIONS_PHONE');
-						let direct = data.filter(e => e.metric === 'QUERIES_DIRECT');
-						let indirect = data.filter(e => e.metric === 'QUERIES_INDIRECT');
-						let chain = data.filter(e => e.metric === 'QUERIES_CHAIN');
-						let views = data.filter(e => e.metric === 'VIEWS_SEARCH');
+						let website = data.filter((e) => e.metric === 'ACTIONS_WEBSITE');
+						let calls = data.filter((e) => e.metric === 'ACTIONS_PHONE');
+						let direct = data.filter((e) => e.metric === 'QUERIES_DIRECT');
+						let indirect = data.filter((e) => e.metric === 'QUERIES_INDIRECT');
+						let chain = data.filter((e) => e.metric === 'QUERIES_CHAIN');
+						let views = data.filter((e) => e.metric === 'VIEWS_SEARCH');
 						website = website[0] ? website[0].totalValue.value : null;
 						calls = calls[0] ? calls[0].totalValue.value : null;
 						direct = direct[0] ? direct[0].totalValue.value : null;
@@ -393,10 +392,7 @@ module.exports = {
 		let insightobj = { insights: [] };
 		for (let i = 17; i > 0; i--) {
 			setTimeout(async () => {
-				let startTime = moment()
-					.subtract(i, 'months')
-					.date(1)
-					.format();
+				let startTime = moment().subtract(i, 'months').date(1).format();
 				let endTime = moment()
 					.subtract(i - 1, 'months')
 					.date(1)
@@ -455,15 +451,15 @@ module.exports = {
 					},
 				},
 			)
-			.then(res => {
+			.then((res) => {
 				if (res.data.locationMetrics) {
 					let data = res.data.locationMetrics[0].metricValues;
-					let website = data.filter(e => e.metric === 'ACTIONS_WEBSITE');
-					let calls = data.filter(e => e.metric === 'ACTIONS_PHONE');
-					let direct = data.filter(e => e.metric === 'QUERIES_DIRECT');
-					let indirect = data.filter(e => e.metric === 'QUERIES_INDIRECT');
-					let chain = data.filter(e => e.metric === 'QUERIES_CHAIN');
-					let views = data.filter(e => e.metric === 'VIEWS_SEARCH');
+					let website = data.filter((e) => e.metric === 'ACTIONS_WEBSITE');
+					let calls = data.filter((e) => e.metric === 'ACTIONS_PHONE');
+					let direct = data.filter((e) => e.metric === 'QUERIES_DIRECT');
+					let indirect = data.filter((e) => e.metric === 'QUERIES_INDIRECT');
+					let chain = data.filter((e) => e.metric === 'QUERIES_CHAIN');
+					let views = data.filter((e) => e.metric === 'VIEWS_SEARCH');
 					website = website[0] ? website[0].totalValue.value : null;
 					calls = calls[0] ? calls[0].totalValue.value : null;
 					direct = direct[0] ? direct[0].totalValue.value : null;
@@ -488,23 +484,18 @@ module.exports = {
 	updatePastMonthInsights: async (req, res) => {
 		let { token } = req.body;
 		// Set Dates for First of last month and first of this month
-		let startTime = moment()
-			.subtract(1, 'month')
-			.date(1)
-			.format();
-		let endTime = moment()
-			.date(1)
-			.format();
+		let startTime = moment().subtract(1, 'month').date(1).format();
+		let endTime = moment().date(1).format();
 		// Get all insights
 		let accounts = await req.app.get('db').gmb.all_accounts([]);
-		accounts = accounts.filter(e => e.insights).filter(e => e.insights.insights[0]);
+		accounts = accounts.filter((e) => e.insights).filter((e) => e.insights.insights[0]);
 		for (let i = 0; i < accounts.length; i++) {
 			setTimeout(async () => {
 				let { insights, location_id, location_name } = accounts[i];
 				let data = await module.exports.monthInsights({ location_id, startTime, endTime, token });
 				await insights.insights.push(data);
 				insights.insights = insights.insights.filter(
-					(value, index, self) => self.map(x => x.range.startTime.split('T')[0]).indexOf(value.range.startTime.split('T')[0]) === index,
+					(value, index, self) => self.map((x) => x.range.startTime.split('T')[0]).indexOf(value.range.startTime.split('T')[0]) === index,
 				);
 				await req.app.get('db').gmb.update_insights([location_id, insights]);
 			}, i * 500);
@@ -544,12 +535,12 @@ module.exports = {
 							},
 						},
 					)
-					.then(res => {
+					.then((res) => {
 						if (res.data) {
 							console.log('GOOD', location_id);
 						}
 					})
-					.catch(err => {
+					.catch((err) => {
 						if (err) {
 							console.log(err, location_id);
 						}

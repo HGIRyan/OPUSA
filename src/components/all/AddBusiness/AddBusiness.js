@@ -38,7 +38,7 @@ class AddBusiness extends Component {
 	async getDefault() {
 		let industry = this.state.industry ? this.state.industry : 'All';
 		let { businessName } = this.state;
-		await axios.get(`/api/get/default/${industry}/${businessName}`).then(res => {
+		await axios.get(`/api/get/default/${industry}/${businessName}`).then((res) => {
 			if (res.data.msg === 'NO SESSION') {
 				alert('Notify IT. No Session Recognized');
 			} else if (res.data.msg === 'Company Already Exists') {
@@ -58,15 +58,15 @@ class AddBusiness extends Component {
 			searching: true,
 			places: [],
 		});
-		await axios.get(`https://api.scaleserp.com/search?api_key=${process.env.REACT_APP_SERP_API}&q=${businessName}`).then(res => {
+		await axios.get(`https://api.scaleserp.com/search?api_key=${process.env.REACT_APP_SERP_API}&q=${businessName}`).then((res) => {
 			if (res.status === 200) {
 				let { data } = res;
 				if (data.knowledge_graph) {
 					let know = data.knowledge_graph;
 					if (know.reviews_from_the_web[0]) {
-						if (know.reviews_from_the_web.some(e => e.title === 'Facebook')) {
+						if (know.reviews_from_the_web.some((e) => e.title === 'Facebook')) {
 							let { links } = this.state;
-							let revLink = know.reviews_from_the_web[know.reviews_from_the_web.findIndex(e => e.title === 'Facebook')].link;
+							let revLink = know.reviews_from_the_web[know.reviews_from_the_web.findIndex((e) => e.title === 'Facebook')].link;
 							if (revLink.split('')[revLink.split('').length - 1] === '/') {
 								revLink = revLink
 									.split('')
@@ -116,19 +116,19 @@ class AddBusiness extends Component {
 		});
 		await axios
 			.post('/api/google/place/placeid/details', { placeId })
-			.then(res => {
+			.then((res) => {
 				if (res.data.msg === 'GOOD') {
 					let data = res.data.data;
 					let { address_components } = data;
-					let streshort = address_components.filter(e => e.types.some(el => el === 'street_number' || el === 'route'));
+					let streshort = address_components.filter((e) => e.types.some((el) => el === 'street_number' || el === 'route'));
 					streshort = streshort[0] ? streshort[0].short_name : '';
-					let strelong = address_components.filter(e => e.types.some(el => el === 'route'));
+					let strelong = address_components.filter((e) => e.types.some((el) => el === 'route'));
 					strelong = strelong[0] ? strelong[0].long_name : '';
 					let street = streshort + ' ' + strelong;
-					let country = address_components.filter(e => e.types.some(el => el === 'country'))[0].long_name;
-					let state = address_components.filter(e => e.types.some(el => el === 'administrative_area_level_1'))[0].short_name;
-					let city = address_components.filter(e => e.types.some(el => el === 'locality' || el === 'political'))[0].long_name;
-					let zip = address_components.filter(e => e.types.some(el => el === 'postal_code'))[0].long_name;
+					let country = address_components.filter((e) => e.types.some((el) => el === 'country'))[0].long_name;
+					let state = address_components.filter((e) => e.types.some((el) => el === 'administrative_area_level_1'))[0].short_name;
+					let city = address_components.filter((e) => e.types.some((el) => el === 'locality' || el === 'political'))[0].long_name;
+					let zip = address_components.filter((e) => e.types.some((el) => el === 'postal_code'))[0].long_name;
 					let geo = { lat: data.geometry.location.lat, lng: data.geometry.location.lng };
 					let website = data.website ? data.website : 'N/A';
 					let timezone = data.utc_offset;
@@ -159,13 +159,13 @@ class AddBusiness extends Component {
 				} else {
 				}
 			})
-			.catch(err => console.log('ERROR::', err));
+			.catch((err) => console.log('ERROR::', err));
 	}
 	async getPlaces(searchTerm) {
 		this.setState({ searching: true });
 		await axios
 			.post('/api/google/place/search', { searchTerm })
-			.then(res => {
+			.then((res) => {
 				res = res.data;
 				if (res.msg === 'GOOD') {
 					if (res.data.length !== 0) {
@@ -179,7 +179,7 @@ class AddBusiness extends Component {
 					alert(res.msg);
 				}
 			})
-			.catch(err => console.log('ERROR::', err));
+			.catch((err) => console.log('ERROR::', err));
 	}
 	addKey() {
 		let { keyval, rankKey } = this.state;
@@ -192,7 +192,7 @@ class AddBusiness extends Component {
 		axios.defaults.timeout = 50000;
 		await axios
 			.post('/api/ll/createbusiness', { info })
-			.then(async res => {
+			.then(async (res) => {
 				res = res.data;
 				this.setState({ submitting: false });
 				if (res.msg === 'GOOD' && res.businessInfo.c_id) {
@@ -204,14 +204,14 @@ class AddBusiness extends Component {
 					alert(res.msg);
 				}
 			})
-			.catch(err => console.log('ERROR: ', err));
+			.catch((err) => console.log('ERROR: ', err));
 	}
 	async uploader(e) {
 		// let { logo } = this.state.bus;
 		let files = e.target.files;
 		let reader = new FileReader();
 		reader.readAsDataURL(files[0]);
-		reader.onload = e => {
+		reader.onload = (e) => {
 			const formData = { file: e.target.result };
 			this.setState({ img: e.target.result, formData });
 		};
@@ -242,9 +242,9 @@ class AddBusiness extends Component {
 			);
 		});
 	}
-	getColors = colors => {
+	getColors = (colors) => {
 		this.setState({ colors: [] });
-		this.setState(state => ({ colors: [...state.colors, ...colors], color: colors[0] ? colors[0] : '#000000' }));
+		this.setState((state) => ({ colors: [...state.colors, ...colors], color: colors[0] ? colors[0] : '#000000' }));
 	};
 	async moveUp(i) {
 		let { links } = this.state;
@@ -273,7 +273,7 @@ class AddBusiness extends Component {
 	}
 	async add(siteType) {
 		let { links } = this.state;
-		if (!this.state.links.filter(e => e.site === siteType)[0]) {
+		if (!this.state.links.filter((e) => e.site === siteType)[0]) {
 			links.unshift({ site: siteType, link: '' });
 			this.setState({ links: links, site: siteType });
 		} else {
@@ -294,7 +294,7 @@ class AddBusiness extends Component {
 	}
 	async getUploaded() {
 		if (!Array.isArray(this.state.images)) {
-			await axios.get('/api/uploadedimages').then(res => {
+			await axios.get('/api/uploadedimages').then((res) => {
 				if (res.data.msg === 'GOOD') {
 					this.setState({ images: res.data.res.resources, imgLoaded: false, modalOpen: true });
 				}
@@ -304,7 +304,7 @@ class AddBusiness extends Component {
 	async getLogoLink() {
 		let { formData, industry } = this.state;
 		await this.setState({ uploading: true });
-		await axios.post('/api/create/logolink', { formData, industry }).then(res => {
+		await axios.post('/api/create/logolink', { formData, industry }).then((res) => {
 			if (res.data.msg === 'GOOD') {
 				this.setState({ uploading: false, img: res.data.link });
 			} else {
@@ -326,7 +326,7 @@ class AddBusiness extends Component {
 	async syncWSF() {
 		let { sf_key, c_api } = this.state;
 		c_api.salesforce.sf_id = sf_key;
-		await axios.post('/api/update/sf_api', { c_api }).then(res => {
+		await axios.post('/api/update/sf_api', { c_api }).then((res) => {
 			if (res.data.msg === 'GOOD') {
 				this.setState({ c_api: res.data.c_api, sfSync: true });
 			} else {
@@ -345,7 +345,7 @@ class AddBusiness extends Component {
 							{this.state.businessName && this.state.page !== 1 ? (
 								<h3 style={{ right: '27.5%', position: 'relative' }}> {this.state.businessName.substring(0, 25)}</h3>
 							) : null}
-							<Select value={this.state.page.toString()} onChange={e => this.setState({ page: parseInt(e.target.value) })}>
+							<Select value={this.state.page.toString()} onChange={(e) => this.setState({ page: parseInt(e.target.value) })}>
 								<option value="1">Page 1</option>
 								<option value="2">Page 2</option>
 								<option value="3">Page 3</option>
@@ -392,6 +392,7 @@ class AddBusiness extends Component {
 								) : (
 									<Page4
 										{...this.props}
+										state={this.state}
 										rankKey={rankKey}
 										keyval={keyval}
 										updateInput={this.updateInput.bind(this)}

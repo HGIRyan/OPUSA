@@ -2,6 +2,7 @@ let { DEV, landing_link } = process.env;
 DEV = DEV.toLowerCase() === 'true' ? true : false;
 const Err = require('./../Error');
 const Default = require('./../Defaults');
+const { sign } = require('jsonwebtoken');
 module.exports = {
 	filter: (comp, cust, type) => {
 		try {
@@ -18,14 +19,14 @@ module.exports = {
 			Err.emailMsg(e, 'templates/filter');
 		}
 	},
-	formatPhoneNumber: phoneNumberString => {
+	formatPhoneNumber: (phoneNumberString) => {
 		try {
 			phoneNumberString = Array.isArray(phoneNumberString) ? phoneNumberString[0] : phoneNumberString;
 			phoneNumberString = phoneNumberString.toString();
 			if (phoneNumberString && phoneNumberString.indexOf('+1') === 0) {
 				phoneNumberString = phoneNumberString.substring(2);
 				if (phoneNumberString.includes('-')) {
-					let spli = phoneNumberString.split('-').map(e => e.trim());
+					let spli = phoneNumberString.split('-').map((e) => e.trim());
 					spli[0] = '(' + spli[0] + ')';
 					phoneNumberString = spli.join('-');
 				} else if (!phoneNumberString.includes(')')) {
@@ -53,7 +54,7 @@ module.exports = {
 			comp = Array.isArray(comp) ? comp[0] : comp;
 			if (str) {
 				// console.log(cust)
-				let check = str => {
+				let check = (str) => {
 					str = str.split('.');
 					let table = str[0];
 					let col = str[1];
@@ -68,10 +69,10 @@ module.exports = {
 					// console.log(str);
 					let items = str.map((e, i) => {
 						if (e.includes('☀')) {
-							let key = e.split('☀').filter(el => {
+							let key = e.split('☀').filter((el) => {
 								return el !== '';
 							});
-							let keyword = key.filter(el => el.toLowerCase().includes('customer.') || el.toLowerCase().includes('company.'))[0];
+							let keyword = key.filter((el) => el.toLowerCase().includes('customer.') || el.toLowerCase().includes('company.'))[0];
 							key.splice(key.indexOf(keyword), 1, check(keyword));
 							return key.join('');
 						} else {
@@ -91,6 +92,25 @@ module.exports = {
 	},
 	Standard: (comp, cust, type, format) => {
 		try {
+			let token = sign(
+				{
+					c_id: comp.c_id,
+					logo: comp.logo,
+					active: comp.active,
+					address: comp.address,
+					landing: {
+						p: comp.positive_landing,
+						pass: comp.passive_landing,
+						d: comp.demoter_landing,
+					},
+					links: comp.review_links,
+					company_name: comp.company_name,
+					place_id: comp.place_id,
+					phone: comp.phone,
+				},
+				process.env.REACT_APP_JWT_SECRET,
+			);
+			// console.log(token);
 			let body, thanks, question;
 			let one = format.split('')[0];
 			let two = format.split('')[1];
@@ -205,19 +225,19 @@ module.exports = {
                 <div style="padding: .5% 2.5% 0 0; margin-left: 0; text-align: center;">
 					<br/>
 					<div style="width: 600px;">
-                    <a href='${landing_link}feedback/rating/${cor_id}/${cus_id}/1/email/${c_id}' id='one'style='display: inline-block; border: solid black 2px;  border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(255, 15, 15, .7); text-decoration: none; color: black;'>
+                    <a href='${landing_link}feedback/rating/${cor_id}/${cus_id}/1/email/${c_id}/${token}' id='one'style='display: inline-block; border: solid black 2px;  border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(255, 15, 15, .7); text-decoration: none; color: black;'>
                         <h1 style='margin: 0; padding: 0; margin-top: 12.5%;'>1</h1>
                     </a>
-                    <a  href='${landing_link}feedback/rating/${cor_id}/${cus_id}/2/email/${c_id}' id='two' style='display: inline-block; border: solid black 2px; border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(255, 125, 15, .7); text-decoration: none; color: black;'>
+                    <a  href='${landing_link}feedback/rating/${cor_id}/${cus_id}/2/email/${c_id}/${token}' id='two' style='display: inline-block; border: solid black 2px; border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(255, 125, 15, .7); text-decoration: none; color: black;'>
                         <h1 style='margin: 0; padding: 0; margin-top: 12.5%;'>2</h1>
                     </a>
-                    <a  href='${landing_link}feedback/rating/${cor_id}/${cus_id}/3/email/${c_id}' id='three' style='display: inline-block; border: solid black 2px; border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(255, 250, 15, .7); text-decoration: none; color: black;'>
+                    <a  href='${landing_link}feedback/rating/${cor_id}/${cus_id}/3/email/${c_id}/${token}' id='three' style='display: inline-block; border: solid black 2px; border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(255, 250, 15, .7); text-decoration: none; color: black;'>
                         <h1 style='margin: 0; padding: 0; margin-top: 12.5%;'>3</h1>
                     </a>
-                    <a  href='${landing_link}feedback/rating/${cor_id}/${cus_id}/4/email/${c_id}' id='four' style='display: inline-block; border: solid black 2px; border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(100, 255, 15, .7); text-decoration: none; color: black;'>
+                    <a  href='${landing_link}feedback/rating/${cor_id}/${cus_id}/4/email/${c_id}/${token}' id='four' style='display: inline-block; border: solid black 2px; border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(100, 255, 15, .7); text-decoration: none; color: black;'>
                         <h1 style='margin: 0; padding: 0; margin-top: 12.5%;'>4</h1>
                     </a>
-                    <a  href='${landing_link}feedback/rating/${cor_id}/${cus_id}/5/email/${c_id}' id='five' style='display: inline-block; border: solid black 2px; border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(25, 200, 50, .7); text-decoration: none; color: black;'>
+                    <a  href='${landing_link}feedback/rating/${cor_id}/${cus_id}/5/email/${c_id}/${token}' id='five' style='display: inline-block; border: solid black 2px; border-radius: 50%; height: 50px; width: 50px; vertical-align: middle; margin: 0 2.5%; background-color: rgba(25, 200, 50, .7); text-decoration: none; color: black;'>
                         <h1 style='margin: 0; padding: 0; margin-top: 12.5%;'>5</h1>
                     </a>
 					</div>
@@ -304,21 +324,39 @@ module.exports = {
 		}
 	},
 	text: (comp, cust) => {
+		let token = sign(
+			{
+				c_id: comp.c_id,
+				logo: comp.logo,
+				active: comp.active,
+				address: comp.address,
+				landing: {
+					p: comp.positive_landing,
+					pass: comp.passive_landing,
+					d: comp.demoter_landing,
+				},
+				links: comp.review_links,
+				company_name: comp.company_name,
+				place_id: comp.place_id,
+				phone: comp.phone,
+			},
+			process.env.REACT_APP_JWT_SECRET,
+		);
 		try {
 			return `
 			Hi ${module.exports.keywords('☀customer.first_name☀', comp, cust)}, 
 			\n		
 			I hope you are doing well! We wanted to check-in and see how your experience has been with our agency. Using the scale of 1 to 5 below…	
 			\n		
-			1 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/1/email/${comp.c_id}
+			1 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/1/email/${comp.c_id}/${token}
 			\n		
-			2 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/2/email/${comp.c_id}
+			2 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/2/email/${comp.c_id}/${token}
 			\n		
-			3 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/3/email/${comp.c_id}
+			3 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/3/email/${comp.c_id}/${token}
 			\n		
-			4 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/4/email/${comp.c_id}
+			4 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/4/email/${comp.c_id}/${token}
 			\n		
-			5 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/5/email/${comp.c_id}
+			5 - ${landing_link}feedback/rating/${comp.cor_id}/${cust.cus_id}/5/email/${comp.c_id}/${token}
 			\n		
         `;
 		} catch (e) {

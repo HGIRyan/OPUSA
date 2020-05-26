@@ -109,14 +109,14 @@ class Admin extends Component {
                         {this.multiLoc(data, info)}
                     </NoDiv> : null : null : null} */}
 						<hr />
-						{user === 'rhutchison' || user === 'biggdogg' || 'dev' ? (
+						{user === 'rhutchison' || user === 'biggdogg' || user === 'dev' ? (
 							<NoDiv direction="column">
 								<SideBarLink
 									style={item}
 									className="tertiary-color sidebar-hover"
 									indent="2.5%"
 									to={{
-										pathname: `/feedback/rating/8e9363e976215eb6409f4329282053afa3/7ffafcc29c19d87061e729d5a04a4cc66361a704d8df69/4/email/38a1e16456eb11041ee6050b7475dfaac1`,
+										pathname: `/feedback/rating/b222dfbfafd584e71741fdd45d5fd74568/d4347c0370e9db4a2ac1b9119c2bf456d1179171a8dd98/3/email/da5a9a62affd748bd626faf1e1554074d7/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjX2lkIjoxLCJsb2dvIjoiaHR0cHM6Ly9yZXMuY2xvdWRpbmFyeS5jb20vbGlmdC1sb2NhbC9pbWFnZS91cGxvYWQvdjE1NzYxMDYwMzMvc3dnMG5ucmNxaGUzaGVxcHF0MHcucG5nIiwiYWN0aXZlIjpmYWxzZSwiYWRkcmVzcyI6eyJzdHJlZXQiOiIgIDI1MDAgRXhlY3V0aXZlIFBrd3kgU3VpdGUgIzE0MCAiLCJzdGF0ZSI6IlVUIiwiY2l0eSI6IiBMZWhpIiwiemlwIjoiODQwNDMifSwibGFuZGluZyI6eyJwIjp7InRoYW5rcyI6IlRoYW5rcyBGb3IgTGVhdmluZyBHb29kIFJhdGluZyAiLCJib2R5IjoiV2UgYXJlIGdsYWQgeW91IGFyZSBoYXBweSB3aXRoIHRoZSBzZXJ2aWNlLiBXb3VsZCB5b3UgcGxlYXNlIHJlY29tbWVuZCB1cyBvbiBHb29nbGUgd2l0aCBhIHF1aWNrIHJldmlldyBhbmQgc3RhciByYXRpbmcgdGhyb3VnaCB0aGUgbGluayBiZWxvdz8gSXQgd291bGQgbWVhbiBhIGxvdCB0byB1cyEiLCJza2lwIjp0cnVlfSwicGFzcyI6eyJ0aGFua3MiOiJUaGFuayB5b3UgZm9yIHlvdXIgdGltZSIsImJvZHkiOiJXZSBhcHByZWNpYXRlIHlvdXIgZmVlZGJhY2sgc28gZmVlbCBmcmVlIHRvIHNoYXJlIGFueSBhZGRpdGlvbmFsIGluZm9ybWF0aW9uIHRoYXQgd2lsbCBiZSBoZWxwZnVsIGluIG91ciBmb2xsb3cgdXAgd2l0aCB5b3Ugb3IgbGVhdmUgZmVlZGJhY2sgdG8gb25lIG9mIG91ciBvbmxpbmUgcHJvZmlsZXMiLCJza2lwIjpmYWxzZX0sImQiOnsidGhhbmtzIjoiIFdpbGwgeW91IGxlYXZlIHVzIGEgcXVpY2sgY29tbWVudCBvbiB3aGVyZSB3ZSB3ZW50IHdyb25nPyBcblRoYW5rIHlvdSBzbyBtdWNoISIsImJvZHkiOiJXZSBhcHByZWNpYXRlIHlvdXIgZmVlZGJhY2sgYW5kIHdoZW4gaXQncyBub3Qgb3V0c3RhbmRpbmcsIHdlIHdhbnQgYSBjaGFuY2UgdG8gbWFrZSBpdCByaWdodC4ifX0sImxpbmtzIjp7ImxpbmtzIjpbeyJzaXRlIjoiR29vZ2xlIiwibGluayI6Imh0dHBzOi8vc2VhcmNoLmdvb2dsZS5jb20vbG9jYWwvd3JpdGVyZXZpZXc_cGxhY2VpZD1DaElKYzhINTZWQ0FVb2NSU1ZQeUt2T3lFc0EifV19LCJjb21wYW55X25hbWUiOiJMaWZ0IExvY2FsIC0gVEVTVCIsInBsYWNlX2lkIjoiQ2hJSmM4SDU2VkNBVW9jUlNWUHlLdk95RXNBIiwicGhvbmUiOnsicGhvbmUiOlsiKzEgODAxLTQwNy01OTgzIl19LCJpYXQiOjE1ODk5ODcwMjJ9.ZihumjPeqQGfOZ8uiun9acsp5DwCBbpFox5jMxM3khA`,
 										state: lState,
 									}}
 								>

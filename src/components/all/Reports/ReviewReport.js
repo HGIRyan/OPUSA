@@ -138,7 +138,7 @@ class ReviewReport extends Component {
 									<div style={{ width: '100%', height: '80%' }}>{this.Chart()}</div>
 								</BoxSplit>
 								<StatusStats statuses={statuses} />
-								<ActionStats sentStats={sentStats} />
+								<ActionStats sentStats={sentStats} {...this.props} info={this.state.og} />
 							</ThreeSplit>
 							<div style={{ width: '40vw', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 								<RowContainer className="input-field" style={{ margin: '0', display: 'flex', alignItems: 'center', width: '40%' }}>

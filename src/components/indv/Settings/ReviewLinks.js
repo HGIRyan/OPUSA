@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { Layout1, LoadingWrapper, Infobox, LoadingWrapperSmall } from '../../../utilities/index';
 import Axios from 'axios';
 import { Select } from 'react-materialize';
+import { LinkList } from './Links';
 
 class ReviewLinks extends Component {
 	constructor() {
@@ -21,7 +22,7 @@ class ReviewLinks extends Component {
 		document.title = `Link Editor`;
 		let { client_id } = this.props.match.params;
 		if (Array.isArray(this.props.location.state.info)) {
-			let exists = this.props.location.state.info.filter(item => item.c_id === parseInt(client_id));
+			let exists = this.props.location.state.info.filter((item) => item.c_id === parseInt(client_id));
 			if (exists[0]) {
 				await this.hasLinks(exists[0]);
 			} else {
@@ -34,7 +35,7 @@ class ReviewLinks extends Component {
 	}
 	async getLinks() {
 		let { client_id } = this.props.match.params;
-		await Axios.get(`/api/get/business_details/${client_id}`).then(res => {
+		await Axios.get(`/api/get/business_details/${client_id}`).then((res) => {
 			if (res.data.msg === 'GOOD') {
 				if (Array.isArray(this.props.location.state.info)) {
 					this.props.location.state.info.push(res.data.info[0]);
@@ -76,7 +77,7 @@ class ReviewLinks extends Component {
 	}
 	async add() {
 		let { site, og } = this.state;
-		if (!og.review_links.links.filter(e => e.site === site)[0]) {
+		if (!og.review_links.links.filter((e) => e.site === site)[0]) {
 			og.review_links.links.unshift({ site, link: '' });
 			this.setState({ links: og.review_links.links, og });
 		} else {
@@ -102,7 +103,7 @@ class ReviewLinks extends Component {
 		let term = og.company_name + ' in ' + og.address.zip + ' Facebook ';
 		let serp = await Axios.get(`https://api.scaleserp.com/search?api_key=${process.env.REACT_APP_SERP_API}&q=${term}`);
 		if (Array.isArray(serp.data?.organic_results)) {
-			let fb = serp.data.organic_results.filter(e => e.link.toLowerCase().includes('facebook'));
+			let fb = serp.data.organic_results.filter((e) => e.link.toLowerCase().includes('facebook'));
 			if (fb[0]) {
 				og.review_links.links.splice(i, 1, { site, link: fb[0].link + 'reviews' });
 				this.setState({ links: og.review_links.links, og });
@@ -116,12 +117,12 @@ class ReviewLinks extends Component {
 		let { client_id } = this.props.match.params;
 		let { og } = this.state;
 		let { review_links } = og;
-		if (review_links.links.every(e => e.link.toLowerCase().includes('http'))) {
+		if (review_links.links.every((e) => e.link.toLowerCase().includes('http'))) {
 			this.setState({ saving: true });
-			if (review_links.links.every(e => e.link)) {
-				await Axios.post('/api/links/update', { client_id, review_links, og }).then(res => {
+			if (review_links.links.every((e) => e.link)) {
+				await Axios.post('/api/links/update', { client_id, review_links, og }).then((res) => {
 					if (res.data.msg === 'GOOD') {
-						this.props.location.state.info.map(e => (e.c_id === client_id ? (e.links = review_links) : null));
+						this.props.location.state.info.map((e) => (e.c_id === client_id ? (e.links = review_links) : null));
 						this.props.history.replace(this.props.location.pathname, this.props.location.state);
 						this.setState({ msg: 'Saving Link was a Success', saving: false });
 					} else {
@@ -136,15 +137,7 @@ class ReviewLinks extends Component {
 			alert('All Links Must Contain "http://" or "https://"');
 		}
 	}
-	siteLogo(site) {
-		if (site === 'Google') {
-			return process.env.REACT_APP_GOOGLE_LOGO;
-		} else if (site === 'Facebook') {
-			return process.env.REACT_APP_FACEBOOK_LOGO;
-		} else if (site === 'Trustpilot') {
-			return process.env.REACT_APP_TRUSTPILOT_LOGO;
-		}
-	}
+
 	render() {
 		let { links, site, msg } = this.state;
 		links = Array.isArray(links) ? links : [];
@@ -159,10 +152,11 @@ class ReviewLinks extends Component {
 						<div className="card" style={{ width: '70vw', padding: '2.5%' }}>
 							{perm === 'admin' ? (
 								<Infobox direction="row" just="flex-start" width="90%">
-									<Select value={site} onChange={e => this.setState({ site: e.target.value })}>
+									<Select value={site} onChange={(e) => this.setState({ site: e.target.value })}>
 										<option value="Google">Google</option>
 										<option value="Facebook">Facebook</option>
 										<option value="Trustpilot">Trustpilot</option>
+										<option value="Custom">Custom</option>
 									</Select>
 									<button style={{ margin: '0 5%' }} className="btn primary-color primary-hover" onClick={() => this.add()}>
 										Add Aditional Link
@@ -174,63 +168,16 @@ class ReviewLinks extends Component {
 									</LoadingWrapperSmall>
 								</Infobox>
 							) : null}
-							<div style={{ width: '60vw', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-								{links.map((item, i) => {
-									let logo = item.site ? this.siteLogo(item.site) : null;
-									return (
-										<div
-											className="card hoverable"
-											style={{ width: '75%', display: 'flex', alignItems: 'flex-start', flexDirection: 'column', backgroundColor: 'rgba(182, 182, 182, 0.2)' }}
-											key={i}
-										>
-											<div style={{ display: 'flex', alignItems: 'center', height: '5vh', marginLeft: '5%' }}>
-												<img style={{ maxWidth: '4vw', maxHeight: '4vh' }} src={logo} alt={`${item.site} Logo`} />
-												<h4 style={{ margin: '0 2.5%' }}>{item.site}</h4>
-												<input
-													style={{ width: '30vw' }}
-													value={item.link}
-													onChange={e => this.link(i, e.target.value, item.site)}
-													disabled={perm !== 'admin' ? true : false}
-												/>
-											</div>
-											{/* {this.siteLogo(item.site)} */}
-											<Infobox direction="row" width="auto">
-												{perm === 'admin' ? (
-													<button className="btn btn-small primary-color primary-hover" style={{ margin: '2.5% 2.5%' }} onClick={() => this.moveUp(i)}>
-														<i className="material-icons">arrow_upward</i>
-													</button>
-												) : null}
-												{perm === 'admin' ? (
-													<button className="btn btn-small primary-color primary-hover" style={{ margin: '2.5% 2.5%' }} onClick={() => this.moveDown(i)}>
-														<i className="material-icons">arrow_downward</i>
-													</button>
-												) : null}
-												{perm === 'admin' ? (
-													<button className="btn btn-small primary-color primary-hover" style={{ margin: '2.5% 2.5%' }} onClick={() => this.delete(i)}>
-														Delete
-													</button>
-												) : null}
-												{item.link ? (
-													<a rel="noopener noreferrer" target="_blank" href={item.link.includes('http') ? item.link : `http://${item.link}`}>
-														<button className="btn btn-small primary-color primary-hover" style={{ width: '7.5vw' }}>
-															Test URL
-														</button>
-													</a>
-												) : null}
-												{perm === 'admin' ? (
-													<button
-														className="btn btn-small primary-color primary-hover"
-														onClick={() => this.lookup(item.site, i)}
-														style={{ margin: '2.5% 2.5%' }}
-													>
-														Lookup
-													</button>
-												) : null}
-											</Infobox>
-										</div>
-									);
-								})}
-							</div>
+							<LinkList
+								{...this.props}
+								links={links}
+								info={this.state.og}
+								link={this.link.bind(this)}
+								moveDown={this.moveDown.bind(this)}
+								moveUp={this.moveUp.bind(this)}
+								lookup={this.lookup.bind(this)}
+								remove={this.delete.bind(this)}
+							/>
 						</div>
 					</LoadingWrapper>
 				</Layout1>

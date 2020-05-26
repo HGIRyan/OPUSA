@@ -13,11 +13,11 @@ module.exports = {
 				from: `Errors@${process.env.REACT_APP_COMPANY_NAME.replace(/\s/g, '')}.com`,
 				subject: `Errors for${e.name}`,
 				text: 'and easy to do anywhere, even with Node.js',
-				html: `Here is your Error <br/> ${JSON.stringify(e)} <br/> ${loc} <br/> <hr/> <br/> ${e}`,
+				html: `Here is your Error <br/> ${JSON.stringify(e)} <br/> ${loc} <br/> <hr/> <br/> ${e} <br/> <hr/> <br/> ${e.toString()} `,
 				category: ['Error'],
 			};
 			if (!DEV && PROD) {
-				sgMail.send(msg).catch(error => {
+				sgMail.send(msg).catch((error) => {
 					console.error(error.toString());
 					const { message, code, response } = error;
 					console.log('ERROR: ', message, code, response);
@@ -29,7 +29,7 @@ module.exports = {
 				console.log('\x1b[31m%s\x1b[0m', 'Loc::', loc);
 			}
 		} else if (!DEV && PROD) {
-			sgMail.send(e).catch(error => {
+			sgMail.send(e).catch((error) => {
 				console.error(error.toString());
 				const { message, code, response } = error;
 				console.log('ERROR: ', message, code, response);

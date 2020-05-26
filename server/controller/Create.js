@@ -485,7 +485,7 @@ module.exports = {
 			console.log('ADDDING LOGO');
 			let { file } = req.body.formData;
 			let { client_id, loc, logo, selectedAccent, accent_color, industry } = req.body;
-			cloudinary.uploader.upload(file, { width: 200, use_filename: true, public_id: industry }, async (err, resp) => {
+			cloudinary.uploader.upload(file, { width: 200 }, async (err, resp) => {
 				if (err) {
 					res.status(200).send({ msg: 'BAD', logo });
 				} else {
@@ -518,7 +518,7 @@ module.exports = {
 		try {
 			let { formData, industry } = req.body;
 			let { file } = formData;
-			cloudinary.uploader.upload(file, { width: 200, use_filename: true, public_id: industry }, async (err, resp) => {
+			cloudinary.uploader.upload(file, { width: 200 }, async (err, resp) => {
 				if (err) {
 					res.status(200).send({ msg: err });
 				} else {

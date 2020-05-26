@@ -48,13 +48,15 @@ class ReviewLandingPage extends Component {
 			width: w >= 1100 ? '15vw' : '90%',
 			margin: '1%',
 		};
-		let siteLogos = site => {
+		let siteLogos = (site) => {
 			if (site === 'Google') {
 				return process.env.REACT_APP_GOOGLE_LOGO;
 			} else if (site === 'Facebook') {
 				return process.env.REACT_APP_FACEBOOK_LOGO;
 			} else if (site === 'Trustpilot') {
 				return process.env.REACT_APP_TRUSTPILOT_LOGO;
+			} else if (site === 'Custom') {
+				return this.state.og.logo;
 			}
 		};
 		return (
@@ -102,7 +104,7 @@ class ReviewLandingPage extends Component {
 									id="textarea1"
 									className="materialize-textarea"
 									placeholder="Please Leave Your Feedback Here"
-									onChange={e => this.setState({ feedback: e.target.value })}
+									onChange={(e) => this.setState({ feedback: e.target.value })}
 									value={this.state.feedback}
 									type="text"
 									data-length="2555"
@@ -132,13 +134,15 @@ class ReviewLandingPage extends Component {
 							<h6>Or... Leave a Review on one of the following</h6>
 							<div style={{ display: 'flex', flexWrap: 'wrap', width: '30%', justifyContent: 'flex-start' }}>
 								{links.map((e, i) => {
-									let siteLogos = site => {
+									let siteLogos = (site) => {
 										if (site === 'Google') {
 											return process.env.REACT_APP_GOOGLE_LOGO;
 										} else if (site === 'Facebook') {
 											return process.env.REACT_APP_FACEBOOK_LOGO;
 										} else if (site === 'Trustpilot') {
 											return process.env.REACT_APP_TRUSTPILOT_LOGO;
+										} else if (site === 'Custom') {
+											return this.state.og.logo;
 										}
 									};
 									return (
@@ -175,7 +179,7 @@ class ReviewLandingPage extends Component {
 									id="textarea1"
 									className="materialize-textarea"
 									placeholder="Please Leave Your Feedback Here:"
-									onChange={e => this.setState({ feedback: e.target.value })}
+									onChange={(e) => this.setState({ feedback: e.target.value })}
 									value={this.state.feedback}
 									type="text"
 									data-length="2555"
@@ -218,7 +222,7 @@ class ReviewLandingPage extends Component {
 												id="textarea1"
 												className="materialize-textarea"
 												placeholder="Please Leave Your Feedback Here:"
-												onChange={e => this.setState({ feedback: e.target.value })}
+												onChange={(e) => this.setState({ feedback: e.target.value })}
 												value={this.state.feedback}
 												type="text"
 												data-length="2555"
@@ -331,7 +335,7 @@ class ReviewLandingPage extends Component {
 									id="textarea1"
 									className="materialize-textarea"
 									value={body}
-									onChange={e => updateLanding(e.target.value, 'body')}
+									onChange={(e) => updateLanding(e.target.value, 'body')}
 								></textarea>
 							</div>
 						</form>
@@ -348,7 +352,7 @@ class ReviewLandingPage extends Component {
 									id="textarea1"
 									className="materialize-textarea"
 									value={thanks}
-									onChange={e => updateLanding(e.target.value, 'thanks')}
+									onChange={(e) => updateLanding(e.target.value, 'thanks')}
 								></textarea>
 							</div>
 						</form>

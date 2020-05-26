@@ -41,7 +41,7 @@ if (PROD) {
 			resave: true,
 			saveUninitialized: true,
 			cookie: {
-				maxAge: 86400000,
+				maxAge: 28800000,
 			},
 		}),
 	);
@@ -54,7 +54,7 @@ if (PROD) {
 			resave: true,
 			saveUninitialized: true,
 			cookie: {
-				maxAge: 86400000,
+				maxAge: 28800000,
 			},
 		}),
 	);
@@ -166,6 +166,7 @@ app.post('/api/update/splitlist', Update.splitList);
 // FEEDBACK RECORDING
 app.post('/api/feedback/record/addon', Record.addonRecord);
 app.post('/api/feedback/reviews/record', Record.feedback);
+app.post('/api/fast/feedback/reviews/record', Record.fastFeedback);
 app.post('/api/company_logo', Info.companyLogo);
 app.post('/api/feedback/reviews/directClick', Record.directClick);
 app.post('/api/unsubscribe', Record.unsubscribe);
@@ -233,27 +234,27 @@ if (!DEV && PROD) {
 		offset = '-240';
 		await Reviews.s_(app, offset);
 	});
-	cron.scheduleJob('45 08 21 * * *', async () => {
+	cron.scheduleJob('45 15 21 * * *', async () => {
 		//Eastern
 		offset = '-240';
 		await Reviews.sr_(app, offset);
 	});
-	cron.scheduleJob('45 15 21 * * *', async () => {
+	cron.scheduleJob('45 30 21 * * *', async () => {
 		//Eastern
 		offset = '-240';
 		await Reviews.fr_(app, offset);
 	});
-	cron.scheduleJob('45 20 21 * * *', async () => {
+	cron.scheduleJob('45 38 21 * * *', async () => {
 		//Eastern
 		offset = '-240';
 		await Reviews.or_(app, offset);
 	});
-	cron.scheduleJob('45 25 21 * * *', async () => {
+	cron.scheduleJob('45 46 21 * * *', async () => {
 		//Eastern
 		offset = '-240';
 		await Reviews.spr_(app, offset);
 	});
-	cron.scheduleJob('45 30 21 * * *', async () => {
+	cron.scheduleJob('45 51 21 * * *', async () => {
 		//Eastern
 		offset = '-240';
 		await Reviews.pr_(app, offset);
@@ -264,27 +265,27 @@ if (!DEV && PROD) {
 		offset = '-300';
 		await Reviews.s_(app, offset);
 	});
-	cron.scheduleJob('45 08 22 * * *', async () => {
+	cron.scheduleJob('45 15 22 * * *', async () => {
 		//Central
 		offset = '-300';
 		await Reviews.sr_(app, offset);
 	});
-	cron.scheduleJob('45 15 22 * * *', async () => {
+	cron.scheduleJob('45 30 22 * * *', async () => {
 		//Central
 		offset = '-300';
 		await Reviews.fr_(app, offset);
 	});
-	cron.scheduleJob('45 20 22 * * *', async () => {
+	cron.scheduleJob('45 38 22 * * *', async () => {
 		//Central
 		offset = '-300';
 		await Reviews.or_(app, offset);
 	});
-	cron.scheduleJob('45 25 22 * * *', async () => {
+	cron.scheduleJob('45 46 22 * * *', async () => {
 		//Central
 		offset = '-300';
 		await Reviews.spr_(app, offset);
 	});
-	cron.scheduleJob('45 30 22 * * *', async () => {
+	cron.scheduleJob('45 51 22 * * *', async () => {
 		//Central
 		offset = '-300';
 		await Reviews.pr_(app, offset);
@@ -295,27 +296,27 @@ if (!DEV && PROD) {
 		offset = '-360';
 		await Reviews.s_(app, offset);
 	});
-	cron.scheduleJob('45 08 23 * * *', async () => {
+	cron.scheduleJob('45 15 23 * * *', async () => {
 		//Mountain
 		offset = '-360';
 		await Reviews.sr_(app, offset);
 	});
-	cron.scheduleJob('45 15 23 * * *', async () => {
+	cron.scheduleJob('45 30 23 * * *', async () => {
 		//Mountain
 		offset = '-360';
 		await Reviews.fr_(app, offset);
 	});
-	cron.scheduleJob('45 20 23 * * *', async () => {
+	cron.scheduleJob('45 38 23 * * *', async () => {
 		//Mountain
 		offset = '-360';
 		await Reviews.or_(app, offset);
 	});
-	cron.scheduleJob('45 25 23 * * *', async () => {
+	cron.scheduleJob('45 46 23 * * *', async () => {
 		//Mountain
 		offset = '-360';
 		await Reviews.spr_(app, offset);
 	});
-	cron.scheduleJob('45 30 23 * * *', async () => {
+	cron.scheduleJob('45 51 23 * * *', async () => {
 		//Mountain
 		offset = '-360';
 		await Reviews.pr_(app, offset);
@@ -326,27 +327,27 @@ if (!DEV && PROD) {
 		offset = '-420';
 		await Reviews.s_(app, offset);
 	});
-	cron.scheduleJob('45 08 0 * * *', async () => {
+	cron.scheduleJob('45 15 0 * * *', async () => {
 		//Pacific
 		offset = '-420';
 		await Reviews.sr_(app, offset);
 	});
-	cron.scheduleJob('45 15 0 * * *', async () => {
+	cron.scheduleJob('45 30 0 * * *', async () => {
 		//Pacific
 		offset = '-420';
 		await Reviews.fr_(app, offset);
 	});
-	cron.scheduleJob('45 20 0 * * *', async () => {
+	cron.scheduleJob('45 38 0 * * *', async () => {
 		//Pacific
 		offset = '-420';
 		await Reviews.or_(app, offset);
 	});
-	cron.scheduleJob('45 25 0 * * *', async () => {
+	cron.scheduleJob('45 46 0 * * *', async () => {
 		//Pacific
 		offset = '-420';
 		await Reviews.spr_(app, offset);
 	});
-	cron.scheduleJob('45 30 0 * * *', async () => {
+	cron.scheduleJob('45 51 0 * * *', async () => {
 		//Pacific
 		offset = '-420';
 		await Reviews.pr_(app, offset);
@@ -357,27 +358,27 @@ if (!DEV && PROD) {
 		offset = '-480';
 		await Reviews.s_(app, offset);
 	});
-	cron.scheduleJob('45 08 01 * * *', async () => {
+	cron.scheduleJob('45 15 01 * * *', async () => {
 		//Alaska
 		offset = '-480';
 		await Reviews.sr_(app, offset);
 	});
-	cron.scheduleJob('45 15 01 * * *', async () => {
+	cron.scheduleJob('45 30 01 * * *', async () => {
 		//Alaska
 		offset = '-480';
 		await Reviews.fr_(app, offset);
 	});
-	cron.scheduleJob('45 20 01 * * *', async () => {
+	cron.scheduleJob('45 38 01 * * *', async () => {
 		//Alaska
 		offset = '-480';
 		await Reviews.or_(app, offset);
 	});
-	cron.scheduleJob('45 25 01 * * *', async () => {
+	cron.scheduleJob('45 46 01 * * *', async () => {
 		//Alaska
 		offset = '-480';
 		await Reviews.spr_(app, offset);
 	});
-	cron.scheduleJob('45 30 01 * * *', async () => {
+	cron.scheduleJob('45 51 01 * * *', async () => {
 		//Alaska
 		offset = '-480';
 		await Reviews.pr_(app, offset);
@@ -388,27 +389,27 @@ if (!DEV && PROD) {
 		offset = '-540';
 		await Reviews.s_(app, offset);
 	});
-	cron.scheduleJob('45 08 03 * * *', async () => {
+	cron.scheduleJob('45 15 03 * * *', async () => {
 		//Hawaii
 		offset = '-540';
 		await Reviews.sr_(app, offset);
 	});
-	cron.scheduleJob('45 15 03 * * *', async () => {
+	cron.scheduleJob('45 30 03 * * *', async () => {
 		//Hawaii
 		offset = '-540';
 		await Reviews.fr_(app, offset);
 	});
-	cron.scheduleJob('45 20 03 * * *', async () => {
+	cron.scheduleJob('45 38 03 * * *', async () => {
 		//Hawaii
 		offset = '-540';
 		await Reviews.or_(app, offset);
 	});
-	cron.scheduleJob('45 25 03 * * *', async () => {
+	cron.scheduleJob('45 46 03 * * *', async () => {
 		//Hawaii
 		offset = '-540';
 		await Reviews.spr_(app, offset);
 	});
-	cron.scheduleJob('45 30 03 * * *', async () => {
+	cron.scheduleJob('45 51 03 * * *', async () => {
 		//Hawaii
 		offset = '-540';
 		await Reviews.pr_(app, offset);

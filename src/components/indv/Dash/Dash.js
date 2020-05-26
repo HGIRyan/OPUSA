@@ -7,10 +7,9 @@ import { Select, Modal } from 'react-materialize';
 import simString from 'string-similarity';
 import { debounce } from 'lodash';
 import 'react-dates/lib/css/_datepicker.css';
-import { KnowledgeCard, Pages, CustomerList } from './DashComp';
+import { KnowledgeCard, Pages, CustomerList, orderCusts, addFilter, Header, ManualRequest, FilterOptions } from './DashComp';
 import 'react-dates/initialize';
 import ReactToolTip from 'react-tooltip';
-import { DateRangePicker } from 'react-dates';
 const { detect } = require('detect-browser');
 const browser = detect();
 class Dash extends Component {
@@ -157,6 +156,7 @@ class Dash extends Component {
 	}
 	async getCust(cor_id, info) {
 		let { client_id } = this.props.match.params;
+		this.setState({ autoPaused: true });
 		// this.setState({ info: info, og: info, bus: info });
 		await axios.get(`/api/indv/customers/${cor_id}`, { cancelToken: this.axiosCancelSource.token }).then((res) => {
 			res = res.data;
@@ -213,7 +213,14 @@ class Dash extends Component {
 		this.setState({ info: activity });
 	}
 	updateState(type, val) {
-		this.setState({ [type]: val });
+		if (Array.isArray(type)) {
+			type.forEach((e) => {
+				let { t, v } = e;
+				this.setState({ [t]: v });
+			});
+		} else {
+			this.setState({ [type]: val });
+		}
 	}
 	GetCustomerInfo(info) {
 		info = info.sort((a, b) => (a.active > b.active ? -1 : 1)).filter((value, index, self) => self.map((x) => x.cus_id).indexOf(value.cus_id) === index);
@@ -266,6 +273,7 @@ class Dash extends Component {
 		if (selected[0]) {
 			this.setState({ sending: true });
 			bus = Array.isArray(bus) ? bus[0] : bus;
+			console.log(type);
 			await axios.post('/api/request/send', { selected, bus, type }).then(async (res) => {
 				if (res.data.msg === 'GOOD') {
 					this.setState({ msg: `Sent ${res.data.sent} email${res.data.sent > 1 ? 's' : ''}`, selected: [], sending: false });
@@ -294,70 +302,7 @@ class Dash extends Component {
 	}
 	async orderCust(num, order) {
 		let { orderBool, info } = this.state;
-		let og;
-		switch (true) {
-			case num === 1:
-				og = orderBool[order] ? await info.sort((a, b) => (a.id < b.id ? 1 : -1)) : await info.sort((a, b) => (a.id > b.id ? 1 : -1));
-				break;
-			case num === 2:
-				og = orderBool[order]
-					? await info.sort((a, b) => (a.first_name < b.first_name ? 1 : -1))
-					: await info.sort((a, b) => (a.first_name > b.first_name ? 1 : -1));
-				break;
-			case num === 3:
-				og = orderBool[order] ? await info.sort((a, b) => (a.rating > b.rating ? 1 : -1)) : await info.sort((a, b) => (a.rating < b.rating ? 1 : -1));
-				break;
-			case num === 4:
-				og = orderBool[order]
-					? await info.sort((a, b) => (a.feedback_text > b.feedback_text ? 1 : -1))
-					: await info.sort((a, b) => (a.feedback_text < b.feedback_text ? 1 : -1));
-				break;
-			case num === 5:
-				og = orderBool[order]
-					? await info.sort((a, b) =>
-							Moment(a.activity.active[a.activity.active.length - 1].date).format('x') <
-							Moment(b.activity.active[b.activity.active.length - 1].date).format('x')
-								? 1
-								: -1,
-					  )
-					: await info.sort((a, b) =>
-							Moment(a.activity.active[a.activity.active.length - 1].date).format('x') >
-							Moment(b.activity.active[b.activity.active.length - 1].date).format('x')
-								? 1
-								: -1,
-					  );
-				break;
-			case num === 6:
-				og = orderBool[order]
-					? await info.sort((a, b) => (a.last_email > b.last_email ? 1 : -1))
-					: await info.sort((a, b) => (a.last_email < b.last_email ? 1 : -1));
-				break;
-			case num === 7:
-				og = orderBool[order] ? await info.sort((a, b) => (a.id > b.id ? 1 : -1)) : await info.sort((a, b) => (a.id > b.id ? 1 : -1));
-				break;
-			case num === 8:
-				og = orderBool[order]
-					? await info.sort((a, b) =>
-							Moment(a.activity.active[a.activity.active.length - 1].date).format('x') <
-							Moment(b.activity.active[b.activity.active.length - 1].date).format('x')
-								? 1
-								: -1,
-					  )
-					: await info.sort((a, b) =>
-							Moment(a.activity.active[a.activity.active.length - 1].date).format('x') >
-							Moment(b.activity.active[b.activity.active.length - 1].date).format('x')
-								? 1
-								: -1,
-					  );
-				break;
-			case num === 9:
-				og = orderBool[order]
-					? await info.sort((a, b) => (Moment(a.last_sent).format('x') < Moment(b.last_sent).format('x') ? 1 : -1))
-					: await info.sort((a, b) => (Moment(a.last_sent).format('x') > Moment(b.last_sent).format('x') ? 1 : -1));
-				break;
-			default:
-				break;
-		}
+		let og = await orderCusts({ num, order, orderBool, info });
 		orderBool[order] = !orderBool[order];
 		if (!this.state.filters.some((e) => e === 'inactive')) {
 			og = await og.sort((a, b) => (a.active > b.active ? -1 : 1));
@@ -368,82 +313,8 @@ class Dash extends Component {
 
 	async addFilters() {
 		let { og, filters, startDate, endDate, bus } = this.state;
-		let all = [];
 		if (filters[0]) {
-			filters.forEach((el) => {
-				if (el === 'dem') {
-					all.push(og.filter((e) => e.rating === 1 || e.rating === 2));
-				} else if (el === 'pass') {
-					all.push(og.filter((e) => e.rating === 3));
-				} else if (el === 'prom') {
-					all.push(og.filter((e) => e.rating === 4 || e.rating === 5));
-				} else if (el === 'feed') {
-					all.push(og.filter((e) => e.feedback_text !== 'N/A' && e.f_id));
-				} else if (el === 'open') {
-					all.push(og.filter((e) => e.f_id && e.opened_time));
-				} else if (el === 'sent') {
-					all.push(
-						og
-							.filter((e) => e.f_id && Array.isArray(e.activity.active))
-							.filter((e) => e.activity.active[e.activity.active.length - 1].type.toLowerCase().includes('first')),
-					);
-				} else if (el === 'sr') {
-					all.push(
-						og
-							.filter((e) => e.f_id && Array.isArray(e.activity.active))
-							.filter((e) => e.activity.active[e.activity.active.length - 1].type.toLowerCase().includes('second')),
-					);
-				} else if (el === 'or') {
-					all.push(
-						og
-							.filter((e) => e.f_id && Array.isArray(e.activity.active))
-							.filter((e) => e.activity.active[e.activity.active.length - 1].type.toLowerCase().includes('opened reminder')),
-					);
-				} else if (el === 'pr') {
-					all.push(
-						og
-							.filter((e) => e.f_id && Array.isArray(e.activity.active))
-							.filter((e) => e.activity.active[e.activity.active.length - 1].type.toLowerCase().includes('positive reminder')),
-					);
-				} else if (el === 'spr') {
-					all.push(
-						og
-							.filter((e) => e.f_id && Array.isArray(e.activity.active))
-							.filter((e) => e.activity.active[e.activity.active.length - 1].type.toLowerCase().includes('second positive')),
-					);
-				} else if (el === 'remaining') {
-					all.push(
-						og.filter(
-							(e) =>
-								e.last_sent <= Moment().subtract(bus[0]?.repeat_request.repeat, 'days').format('YYYY-MM-DD') &&
-								(e.rating >= 3 || e.rating === null) &&
-								e.active &&
-								(!e.click || e.click === null) &&
-								(e.last_email?.toLowerCase() !== 'first send' || e.last_email === null),
-						),
-					);
-				} else if (el === 'added') {
-					all.push(
-						og
-							.filter((e) => e.f_id || Array.isArray(e.activity.active))
-							.filter((e) => e.activity.active[e.activity.active.length - 1].type.toLowerCase().includes('added')),
-					);
-				} else if (el === 'click') {
-					all.push(og.filter((e) => e.f_id && Array.isArray(e.activity.active)).filter((e) => e.click));
-				} else if (el === 'active') {
-					all.push(og.filter((e) => e.active));
-				} else if (el === 'inactive') {
-					all.push(og.filter((e) => !e.active));
-				} else if (el === 'last_sent') {
-					all.push(
-						og.filter((e) => {
-							let last = Moment(e.last_sent).format('x');
-							return last >= startDate.format('x') && last <= endDate.format('x');
-						}),
-					);
-				}
-			});
-			let inf = all.flat().uniq();
+			let inf = await addFilter({ og, filters, startDate, endDate, bus });
 			this.setState({ info: inf, filteredTotal: inf.length, current: 1 });
 		} else {
 			this.setState({ info: og, filteredTotal: 0 });
@@ -458,14 +329,6 @@ class Dash extends Component {
 		let pages = info[0] ? <Pages info={info} current={current} perPage={perPage} updateState={this.updateState.bind(this)} /> : null;
 		// let customers =
 		// let permission = this.props.location.state.permissions;
-		let filterStyle = {
-			display: 'flex',
-			flexDirection: 'column',
-			alignItems: 'flex-start',
-			justifyContent: 'flex-start',
-			minHeight: '20vh',
-			// border: 'solid black',
-		};
 
 		let nps = ((promoters / responses - demoters / responses) * 100).toFixed(0);
 		return (
@@ -511,343 +374,7 @@ class Dash extends Component {
 										}}
 									/>
 								</div>
-								<Modal
-									style={{ outline: 'none', padding: '0', minHeight: this.state.customDates ? '' : '70vh' }}
-									header="Filter Customers"
-									options={{
-										dismissible: true,
-										endingTop: '10%',
-										inDuration: 250,
-										onCloseEnd: null,
-										onCloseStart: null,
-										onOpenEnd: null,
-										onOpenStart: null,
-										opacity: 0.5,
-										outDuration: 250,
-										preventScrolling: true,
-										startingTop: '4%',
-									}}
-									trigger={
-										<button className="btn primary-color primary-hover" style={{ margin: '5%', display: 'flex', justifyContent: 'center', width: '25%' }}>
-											Filter
-										</button>
-									}
-								>
-									<div style={{ outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
-										<div style={filterStyle}>
-											<h5>Rating</h5>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'dem')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'dem')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'dem') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('dem') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Detractors (1 & 2)</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'pass')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'pass')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'pass') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('pass') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Passives (3)</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'prom')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'prom')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'prom') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('prom') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Promoters (4 & 5)</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'feed')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'feed')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'feed') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('feed') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Left Feedback</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'active')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'active')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'active') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('active') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Active</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'inactive')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'inactive')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'inactive') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('inactive') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Inactive</span>
-											</label>
-											<div style={{ width: '100%', display: 'flex', alignItems: 'center' }}>
-												{/* <label data-tip data-for="last_sent">
-													<input
-														type="checkbox"
-														checked={this.state.filters.some(e => e === 'last_sent')}
-														onChange={async () => {
-															if (this.state.filters.some(e => e === 'last_sent')) {
-																await this.setState({ filters: this.state.filters.filter(e => e !== 'last_sent') });
-															} else {
-																await this.setState({ filters: this.state.filters.concat('last_sent') });
-															}
-															await this.addFilters();
-														}}
-													/>
-													<span></span>
-												</label> */}
-												{this.state.customDates ? (
-													<div className="input-field noselect">
-														<label style={{ margin: '0' }}>
-															{this.state.startDate.format('YYYY-MM-DD') === '2005-05-05' ? '' : this.state.startDate.format('YYYY-MM-DD')}
-														</label>
-														<Select
-															value={this.state.startDate.format('YYYY-MM-DD')}
-															onChange={async (e) => {
-																e.target.value === 'custom'
-																	? this.setState({ customDates: false, startDate: Moment().subtract(7, 'days') })
-																	: this.setState({ startDate: Moment(e.target.value) });
-																if (e.target.value !== Moment('2005-05-05').format('YYYY-MM-DD')) {
-																	await this.setState({ filters: this.state.filters.concat('last_sent') });
-																} else {
-																	await this.setState({ filters: this.state.filters.filter((e) => e !== 'last_sent') });
-																}
-																await this.addFilters();
-															}}
-															style={{ margin: '0', padding: '0', height: '1vh' }}
-														>
-															<option value={Moment('2005-05-05').format('YYYY-MM-DD')}>All Time</option>
-															<option value={Moment().subtract(7, 'days').format('YYYY-MM-DD')}>Past Week</option>
-															<option value={Moment().subtract(1, 'month').format('YYYY-MM-DD')}>Past Month</option>
-															<option value={Moment().subtract(3, 'month').format('YYYY-MM-DD')}>Past Quarter</option>
-															<option value={Moment().subtract(1, 'year').format('YYYY-MM-DD')}>Past Year</option>
-															<option value="custom">Custom Range</option>
-														</Select>
-													</div>
-												) : (
-													<div>
-														<DateRangePicker
-															startDate={this.state.startDate} // momentPropTypes.momentObj or null,
-															startDateId="your_unique_start_date_id" // PropTypes.string.isRequired,
-															endDate={this.state.endDate} // momentPropTypes.momentObj or null,
-															endDateId="your_unique_end_date_id" // PropTypes.string.isRequired,
-															onDatesChange={async ({ startDate, endDate }) => {
-																await this.setState({ startDate, endDate });
-																await this.addFilters();
-															}} // PropTypes.func.isRequired,
-															focusedInput={this.state.focusedInput} // PropTypes.oneOf([START_DATE, END_DATE]) or null,
-															onFocusChange={(focusedInput) => this.setState({ focusedInput })} // PropTypes.func.isRequired,
-															isOutsideRange={() => false}
-														/>
-														<button
-															className="btn primary-color primary-hover"
-															onClick={async () => {
-																await this.setState({
-																	customDates: true,
-																	startDate: Moment('2005-05-05'),
-																	filters: this.state.filters.filter((e) => e !== 'last_sent'),
-																});
-																await this.addFilters();
-															}}
-														>
-															All Time
-														</button>
-													</div>
-												)}
-											</div>
-											<ReactToolTip id="last_sent" type="dark" effect="float" place="bottom">
-												<span>
-													Filters through to get customers where <br />
-													last sent date is within parameters
-												</span>
-											</ReactToolTip>
-										</div>
-										<div style={filterStyle}>
-											<h5>Activity</h5>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'open')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'open')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'open') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('open') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Opened</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'sent')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'sent')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'sent') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('sent') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Sent</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'sr')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'sr')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'sr') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('sr') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Second Reminder</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'or')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'or')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'or') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('or') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Opened Reminder</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'pr')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'pr')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'pr') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('pr') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Positive Reminder</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'spr')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'spr')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'spr') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('spr') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Second Positive Reminder</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'click')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'click')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'click') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('click') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Clicked Review Site</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'added')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'added')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'added') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('added') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Customer Added - Not Sent</span>
-											</label>
-											<label>
-												<input
-													type="checkbox"
-													checked={this.state.filters.some((e) => e === 'remaining')}
-													onChange={async () => {
-														if (this.state.filters.some((e) => e === 'remaining')) {
-															await this.setState({ filters: this.state.filters.filter((e) => e !== 'remaining') });
-														} else {
-															await this.setState({ filters: this.state.filters.concat('remaining') });
-														}
-														await this.addFilters();
-													}}
-												/>
-												<span>Remaining</span>
-											</label>
-										</div>
-									</div>
-								</Modal>
+								<FilterOptions state={this.state} updateState={this.updateState.bind(this)} {...this.props} addFilters={this.addFilters.bind(this)} />
 								{this.state.filteredTotal !== 0 ? <p style={{ margin: '0', padding: '0' }}> {this.state.filteredTotal} Total Results</p> : null}
 							</div>
 							<div
@@ -870,68 +397,7 @@ class Dash extends Component {
 										// marginRight: '2.5',
 									}}
 								>
-									<Modal
-										className="scrollNone"
-										trigger={
-											<button
-												node="button"
-												className={`btn ${this.state.selected[0] ? 'primary-color primary-hover' : 'secondary-color secondary-hover'}`}
-												disabled={!this.state.selected[0] ? 'disabled' : ''}
-											>
-												{window.innerWidth >= 1500 ? 'Send Request' : 'Send'}
-											</button>
-										}
-										style={{ outline: 'none', paddingBottom: '8vh' }}
-									>
-										<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-											<h6>Send Feedback Request</h6>
-											<p>
-												To view or edit email templates, visit the{' '}
-												<DefaultLink
-													style={{ color: 'blue', textDecoration: 'underline' }}
-													to={{
-														pathname: `/client-dash/${this.props.match.params.cor_id}/emails/reviews/${this.props.match.params.client_id}`,
-														state: this.props.location.state,
-													}}
-												>
-													Email Editor Page
-												</DefaultLink>
-											</p>
-											<p>Sending Emails To:</p>
-											{this.state.selected.map((e) => (
-												<div
-													style={{ margin: '0', padding: '1%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '60%' }}
-													key={e.cus_id}
-												>
-													<p style={{ margin: '0', padding: '0' }}>• {`${e.first_name} ${e.last_name}  ( ${e.email} ) `}</p>
-													<p style={{ margin: '0', padding: '0' }}>{`Last Sent ${e.last_sent === '2005-05-25' ? '----' : e.last_sent}`}</p>
-												</div>
-											))}
-											<div className="input-field" style={{ width: '20vw', padding: '0', margin: '0 0 1% 0' }}>
-												<Select
-													style={{ border: 'solid black', width: '50vw !important' }}
-													value={this.state.type.email}
-													onChange={(e) => this.setState({ type: { subject: `${e.target.value}_subject`, email: e.target.value } })}
-													options={{
-														dropdownOptions: {},
-													}}
-												>
-													<option value="s">Standard First Send</option>
-													<option value="fr">First Reminder</option>
-													<option value="sr">Second Reminder</option>
-													<option value="or">Opened Reminder</option>
-													<option value="pr">Positive Feedback Reminder</option>
-													<option value="spr">Second Positive Reminder</option>
-												</Select>
-											</div>
-											<button
-												className={`btn ${this.state.selected[0] ? 'primary-color primary-hover' : 'secondary-color secondary-hover'}`}
-												onClick={this.state.selected[0] ? () => this.SendRequest() : null}
-											>
-												Send Request
-											</button>
-										</div>
-									</Modal>
+									<ManualRequest state={this.state} {...this.props} SendRequest={this.SendRequest.bind(this)} updateState={this.updateState.bind(this)} />
 								</LoadingWrapperSmall>
 								{this.state.selected[0] ? 'or' : null}
 								<LoadingWrapperSmall loading={this.state.deleting}>
@@ -987,92 +453,7 @@ class Dash extends Component {
 					</LargeContentHolder>
 					<LoadingWrapper loading={this.state.loading}>
 						<ReportTable className="header responsive-table" style={{ marginLeft: width >= 1500 ? '5vw' : '12.5vw', width: width >= 1500 ? '100%' : '105%' }}>
-							<thead className="theader">
-								<tr style={{ paddingLeft: '5%' }}>
-									<th style={{ borderRadius: '0', width: '5%', marginLeft: '5%', textAlign: 'center' }}>
-										{this.props.location.state.permissions !== 'admin' ? (
-											''
-										) : (
-											<label data-tip data-for="all_select">
-												<input type="checkbox" checked={this.state.sel} onChange={() => this.AddAllSelected()} />
-												<span style={{ color: 'white' }}></span>
-											</label>
-										)}
-									</th>
-									<th
-										style={{ borderRadius: '0', width: '7.5%' }}
-										onClick={() => {
-											this.orderCust(1, 'one');
-										}}
-									>
-										Customer ID
-									</th>
-									<th
-										style={{ borderRadius: '0', width: '25%' }}
-										onClick={() => {
-											this.orderCust(2, 'two');
-										}}
-									>
-										Name
-									</th>
-									<th
-										style={{ borderRadius: '0', width: '5%' }}
-										onClick={() => {
-											this.orderCust(3, 'three');
-										}}
-									>
-										Rating
-									</th>
-									<th
-										style={{ borderRadius: '0', width: '15%' }}
-										onClick={() => {
-											this.orderCust(4, 'four');
-										}}
-									>
-										Feedback
-									</th>
-									<th
-										style={{ borderRadius: '0', width: '15%' }}
-										onClick={() => {
-											this.orderCust(5, 'five');
-										}}
-									>
-										Activity
-									</th>
-									<th
-										style={{ borderRadius: '0', width: '5%' }}
-										onClick={() => {
-											this.orderCust(6, 'six');
-										}}
-									>
-										Source
-									</th>
-									<th
-										style={{ borderRadius: '0', width: '5%' }}
-										onClick={() => {
-											this.orderCust(7, 'seven');
-										}}
-									>
-										Service
-									</th>
-									<th
-										style={{ borderRadius: '0', width: '10%' }}
-										onClick={() => {
-											this.orderCust(8, 'eight');
-										}}
-									>
-										Last Activity
-									</th>
-									<th
-										style={{ borderRadius: '0', width: '10%' }}
-										onClick={() => {
-											this.orderCust(9, 'nine');
-										}}
-									>
-										Last Sent
-									</th>
-								</tr>
-							</thead>
+							<Header state={this.state} {...this.props} AddAllSelected={this.AddAllSelected.bind(this)} orderCust={this.orderCust.bind(this)} />
 							<tbody>
 								{info[0] ? (
 									this.GetCustomerInfo(info)
