@@ -87,8 +87,8 @@ export function LoadingWrapperSmallWhite({ children, loading, style }) {
 	let loadingVisual = <img style={{ width: '35px', height: '35px', zIndex: '50' }} src={DoubleRingSVGWhite} alt="Double Ring SVG" />;
 	return <>{loading ? loadingVisual : <div style={style}>{children}</div>}</>;
 }
-export const proper = str => {
-	return str.replace(/\w\S*/g, function(txt) {
+export const proper = (str) => {
+	return str.replace(/\w\S*/g, function (txt) {
 		return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
 	});
 };
@@ -117,7 +117,7 @@ export const HeaderHolder = styled.div`
 export const SideBarContainer = styled.div`
 	position: fixed;
 	display: flex;
-	width: ${props => (props.width ? props.width : '10vw')};
+	width: ${(props) => (props.width ? props.width : '10vw')};
 	${browser.name !== 'chrome' ? 'height: 95%;' : 'height: -webkit-calc(100% - 4vh);'}
 	bottom: 0;
 	/* border: solid red 2px; */
@@ -133,7 +133,7 @@ export const ContentHolder = styled.div`
 	display: flex;
 	${browser.name !== 'chrome' ? 'width: 85%;' : 'width: -webkit-calc(85%);'}
 	top: 8vh;
-	left: ${props => (props.left ? props.left : '10vw')};
+	left: ${(props) => (props.left ? props.left : '10vw')};
 	@media (max-width: 500px) {
 		width: 100vw;
 		left: 0;
@@ -157,7 +157,7 @@ export const LoginContentHolder = styled.div`
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	width: ${props => (props.width ? props.width : '30vw')};
+	width: ${(props) => (props.width ? props.width : '30vw')};
 	height: 100vh;
 	// background-color: white;
 	@media (max-width: 500px) {
@@ -175,7 +175,7 @@ export const LoginChildFlexContainer = styled.div`
 	justify-content: center;
 	position: relative;
 	/* border: solid orange 2px; */
-	max-height: ${props => (props.height ? props.height : '50vh')};
+	max-height: ${(props) => (props.height ? props.height : '50vh')};
 	width: 90%;
 `;
 export const ChildFlexContainer = styled.div`
@@ -200,7 +200,7 @@ export const FooterContainer = styled.div`
 	border-top: 1px solid black;
 	margin-top: 16px;
 	padding-top: 16px;
-	margin-left: ${props => (props.width >= 1500 ? '4vw' : '12vw')};
+	margin-left: ${(props) => (props.width >= 1500 ? '4vw' : '12vw')};
 	// border: solid black 2px;
 `;
 // =================================================
@@ -214,12 +214,12 @@ export const InfoContainer = styled.div`
 	}
 `;
 export const MainContain = styled.div`
-	width: ${props => (props.width ? props.width : '95%')};
-	height: ${props => (props.height ? props.height : '10vh')};
+	width: ${(props) => (props.width ? props.width : '95%')};
+	height: ${(props) => (props.height ? props.height : '10vh')};
 	display: flex;
-	justify-content: ${props => (props.just ? props.just : '')};
-	align-items: ${props => (props.align ? props.align : '')};
-	padding: ${props => (props.padding ? props.padding : 0)};
+	justify-content: ${(props) => (props.just ? props.just : '')};
+	align-items: ${(props) => (props.align ? props.align : '')};
+	padding: ${(props) => (props.padding ? props.padding : 0)};
 	border: solid black 1px;
 	font-size: 1.2em;
 	border-radius: 10px;
@@ -260,7 +260,7 @@ export const InfoStatus = styled.div`
 	align-items: center;
 	font-size: 0.8em;
 	border: solid black 1px;
-	background-color: ${props =>
+	background-color: ${(props) =>
 		props.color === 'CRITICAL'
 			? 'red'
 			: props.color === 'URGENT'
@@ -310,17 +310,17 @@ export const DefaultLink = styled(Link)`
 	z-index: 0;
 	text-decoration: none;
 	color: black;
-	height: ${props => (props.height ? props.height : '')};
+	height: ${(props) => (props.height ? props.height : '')};
 	// margin: 8px;
 	// padding: 8px;
 `;
 export const LargeContentHolder = styled.div`
 	// border: solid black 1px;
-	min-width: ${props => (props.width ? props.width : '80vw')};
+	min-width: ${(props) => (props.width ? props.width : '80vw')};
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	margin-left: ${props => (props.left ? props.left : '5vw')};
+	margin-left: ${(props) => (props.left ? props.left : '5vw')};
 `;
 export const LoginContainer = styled.div`
 	border: solid black 1px;
@@ -341,7 +341,7 @@ export const EmailEditor = styled.div`
 export const EmailContainer = styled.div`
 	position: relative;
 	right: 0;
-	margin-right: ${props => (props.right ? props.right : '10%')};
+	margin-right: ${(props) => (props.right ? props.right : '10%')};
 	width: 750px;
 	min-width: '600px';
 	display: flex;
@@ -364,22 +364,22 @@ export const ThreeSplit = styled.div`
 	// border: solid black 1px;
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: ${props => (props.just ? props.just : 'space-around')};
-	align-items: ${props => (props.align ? props.align : 'center')};
+	justify-content: ${(props) => (props.just ? props.just : 'space-around')};
+	align-items: ${(props) => (props.align ? props.align : 'center')};
 	width: 100%;
-	height: ${props => (props.height ? props.height : '40vh')};
-	margin: ${props => (props.margin ? props.margin : '')};
-	padding: ${props => (props.padding ? props.padding : '.5%')};
+	height: ${(props) => (props.height ? props.height : '40vh')};
+	margin: ${(props) => (props.margin ? props.margin : '')};
+	padding: ${(props) => (props.padding ? props.padding : '.5%')};
 `;
 export const BoxSplit = styled.div`
 	display: flex;
 	flex-direction: column;
-	justify-content: ${props => (props.just ? props.just : 'center')};
-	align-items: ${props => (props.align ? props.align : 'center')};
-	height: ${props => (props.height ? props.height : '90%')};
-	width: ${props => props.width};
-	padding: ${props => (props.padding ? props.padding : '')};
-	margin: ${props => (props.margin ? props.margin : '.5%')};
+	justify-content: ${(props) => (props.just ? props.just : 'center')};
+	align-items: ${(props) => (props.align ? props.align : 'center')};
+	height: ${(props) => (props.height ? props.height : '90%')};
+	width: ${(props) => props.width};
+	padding: ${(props) => (props.padding ? props.padding : '')};
+	margin: ${(props) => (props.margin ? props.margin : '.5%')};
 `;
 export const ReportTable = styled.table`
 	border-left: solid black 1px;
@@ -391,34 +391,34 @@ export const RowContainer = styled.div`
 	justify-content: space-around;
 	// margin: 8px;
 	// height: 2vh;
-	width: ${props => (props.width ? props.width : '80%')};
+	width: ${(props) => (props.width ? props.width : '80%')};
 `;
 export const MapTR = styled.tr`
-	background-color: ${props => (props.index % 2 === 1 ? 'rgb(240, 240, 240)' : 'white')};
+	background-color: ${(props) => (props.index % 2 === 1 ? 'rgb(240, 240, 240)' : 'white')};
 `;
 export const CompanyInfoBox = styled.div`
-	width: ${props => (props.width ? props.width : '80%')};
-	margin: ${props => (props.margin ? props.margin : '')};
-	padding: ${props => (props.padding ? props.padding : '')}
+	width: ${(props) => (props.width ? props.width : '80%')};
+	margin: ${(props) => (props.margin ? props.margin : '')};
+	padding: ${(props) => (props.padding ? props.padding : '')}
 	// border: solid black 1px;
 	height: 12vh;
 	display: flex;
-	justify-content: ${props => (props.just ? props.just : 'flex-end')};
+	justify-content: ${(props) => (props.just ? props.just : 'flex-end')};
 `;
 export const Infobox = styled.div`
-	margin: ${props => (props.margin ? props.margin : '')};
-	border: ${props => (props.border ? props.border : '')};
-	border-right: ${props => (props.rborder ? 'solid black 1px' : '')};
+	margin: ${(props) => (props.margin ? props.margin : '')};
+	border: ${(props) => (props.border ? props.border : '')};
+	border-right: ${(props) => (props.rborder ? 'solid black 1px' : '')};
 	display: flex;
-	flex-direction: ${props => (props.direction ? props.direction : 'column')};
-	// justify-content: ${props => (props.just ? props.just : 'center')};
-	align-items: ${props => (props.align ? props.align : 'center')};
-	height: ${props => (props.height ? props.height : '100%')};
-	width: ${props => (props.width ? props.width : '12.5%')};
-	padding: ${props => (props.padding ? props.padding : '')};
+	flex-direction: ${(props) => (props.direction ? props.direction : 'column')};
+	// justify-content: ${(props) => (props.just ? props.just : 'center')};
+	align-items: ${(props) => (props.align ? props.align : 'center')};
+	height: ${(props) => (props.height ? props.height : '100%')};
+	width: ${(props) => (props.width ? props.width : '12.5%')};
+	padding: ${(props) => (props.padding ? props.padding : '')};
 `;
 export const StatusTD = styled.td`
-	background-color: ${props =>
+	background-color: ${(props) =>
 		props.status === 'CRITICAL'
 			? 'rgba(200, 0, 0, .8)'
 			: props.status === 'URGENT'
@@ -433,22 +433,22 @@ export const StatusTD = styled.td`
 `;
 export const NoDiv = styled.div`
 	display: flex;
-	flex-direction: ${props => (props.direction ? props.direction : 'row')};
-	justify-content: ${props => (props.just ? props.just : 'flex-start')};
-	align-items: ${props => (props.align ? props.align : 'flex-start')};
-	margin: ${props => (props.margin ? props.margin : 0)};
-	padding: ${props => (props.padding ? props.padding : 0)};
-	border: ${props => (props.border ? props.border : 0)};
-	height: ${props => (props.height ? props.height : 'auto')};
-	width: ${props => (props.width ? props.width : 'auto')};
+	flex-direction: ${(props) => (props.direction ? props.direction : 'row')};
+	justify-content: ${(props) => (props.just ? props.just : 'flex-start')};
+	align-items: ${(props) => (props.align ? props.align : 'flex-start')};
+	margin: ${(props) => (props.margin ? props.margin : 0)};
+	padding: ${(props) => (props.padding ? props.padding : 0)};
+	border: ${(props) => (props.border ? props.border : 0)};
+	height: ${(props) => (props.height ? props.height : 'auto')};
+	width: ${(props) => (props.width ? props.width : 'auto')};
 	:hover {
-		cursor: ${props => (props.cursor ? props.cursor : '')};
+		cursor: ${(props) => (props.cursor ? props.cursor : '')};
 	}
 `;
 export const ImgBox = styled.img`
 	/* border: solid black 2px; */
-	height: ${props => (props.height ? props.height : '25vh')};
-	max-width: ${props => (props.width ? props.width : '30vw')};
+	height: ${(props) => (props.height ? props.height : '25vh')};
+	max-width: ${(props) => (props.width ? props.width : '30vw')};
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -456,7 +456,7 @@ export const ImgBox = styled.img`
 export const StyledReviewLinks = styled.div`
 	display: flex;
 	justify-content: center;
-	background-color: ${props => {
+	background-color: ${(props) => {
 		let site = props.site;
 		if (site === 'Google') {
 			return '#449ff4';
@@ -464,6 +464,8 @@ export const StyledReviewLinks = styled.div`
 			return '#5173b3';
 		} else if (site === 'Trustpilot') {
 			return '#51B27E';
+		} else {
+			return '#000000';
 		}
 	}};
 	border-radius: 25px 25px
@@ -472,12 +474,14 @@ export const StyledReviewLinks = styled.div`
 	:hover {
 		transition-timing-function: ease-out;
 		transition: 0.5s;
-		background-color: ${props => {
+		background-color: ${(props) => {
 			let site = props.site;
 			if (site === 'Google') {
 				return 'rgba(66, 134, 244, 0.5)';
 			} else if (site === 'Facebook') {
 				return 'rgba(60, 89, 153, 0.8)';
+			} else {
+				return '#d3d3d3';
 			}
 		}};
 		cursor: pointer;
@@ -488,7 +492,7 @@ export const StyledReviewLinks = styled.div`
 	color: white;
 	font-size: 1.5em;
 `;
-export const Logos = site => {
+export const Logos = (site) => {
 	if (site === 'Google') {
 		return 'https://www.sccpre.cat/png/big/31/316487_google-logo-png.png';
 	} else if (site === 'Facebook') {
@@ -503,7 +507,7 @@ export const SideBarLink = styled(Link)`
 	text-decoration: none;
 	padding: 0 5%;
 	margin: 0;
-	margin-left: ${props => (props.indent ? props.indent : '0')};
+	margin-left: ${(props) => (props.indent ? props.indent : '0')};
 	align-items: center;
 	-webkit-user-select: none;
 	-moz-user-select: none;
@@ -522,7 +526,7 @@ export const SideBarButton = styled.div`
 	text-decoration: none;
 	padding: 0 5%;
 	margin: 0;
-	margin-left: ${props => (props.indent ? props.indent : '0')};
+	margin-left: ${(props) => (props.indent ? props.indent : '0')};
 	align-items: center;
 	-webkit-user-select: none;
 	-moz-user-select: none;
@@ -534,7 +538,7 @@ export const SideBarButton = styled.div`
 	}
 `;
 export const SideBarComponentDiv = styled.div`
-	display: ${props => (props.flex ? props.flex : 'flex')};
+	display: ${(props) => (props.flex ? props.flex : 'flex')};
 	flex-direction: column;
 	align-items: center;
 	width: 100%;

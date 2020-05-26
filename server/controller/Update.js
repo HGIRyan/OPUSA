@@ -233,8 +233,10 @@ module.exports = {
 			let db = req.app.get('db').update.review_email;
 			// prettier-ignore
 			let { s_body, s_subject, or_body, or_subject, pr_body, pr_subject, fr_body, fr_subject,
-				email_format, from_email, c_id, sr_body, sr_subject, spr_body, spr_subject, signature }
+				email_format, from_email, c_id, sr_body, sr_subject, spr_body, spr_subject, signature, email }
 				= req.body.og;
+			// Update From Email
+			await req.app.get('db').update.from_email([c_id, email]);
 			// UPDATE review_email
 			// -> s_body, s_subject, or_body, or_subject, pr_body, pr_subject, fr_body, fr_subject
 			await db.review_email([

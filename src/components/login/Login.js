@@ -22,7 +22,7 @@ class Login extends Component {
 	async componentDidMount() {
 		document.title = `${process.env.REACT_APP_COMPANY_NAME} Login`;
 		if (typeof this.props.location.state === 'string') {
-			alert('Please Login To Continue');
+			// alert('Please Login To Continue');
 			this.setState({ prevLink: this.props.location.state });
 		}
 		if (this.props.location.state) {
@@ -41,7 +41,7 @@ class Login extends Component {
 		let { userName } = this.state;
 		if (userName.emailValidate()) {
 			this.setState({ submitting: true });
-			await axios.post('/api/ll/reset/password', { userName }).then(res => {
+			await axios.post('/api/ll/reset/password', { userName }).then((res) => {
 				this.setState({ submitting: false, showCode: true });
 			});
 		} else {
@@ -52,7 +52,7 @@ class Login extends Component {
 		let { resetCode } = this.state;
 		if (resetCode) {
 			this.setState({ submitting: true });
-			await axios.post('/api/ll/reset/code', { code: resetCode }).then(res => {
+			await axios.post('/api/ll/reset/code', { code: resetCode }).then((res) => {
 				if (res.data.msg === 'GOOD') {
 					this.setState({ submitting: false, codeCheck: true, info: res.data.info });
 				} else {
@@ -66,7 +66,7 @@ class Login extends Component {
 	async changePass() {
 		let { newPass, newPass2, info, password, userName } = this.state;
 		if (newPass === newPass2) {
-			await axios.post('/api/ll/reset/newpass', { newPass, info, password, userName, newAccount: true }).then(res => {
+			await axios.post('/api/ll/reset/newpass', { newPass, info, password, userName, newAccount: true }).then((res) => {
 				if (res.data.msg === 'GOOD') {
 					this.setState({ forgotPass: false });
 				} else {
@@ -84,13 +84,12 @@ class Login extends Component {
 		} else {
 			await this.setState({ loading: true });
 			password = cryptr.encrypt(password);
-			console.log(password);
-			await axios.get('/api/ll/logout').then(res => {
+			await axios.get('/api/ll/logout').then((res) => {
 				if (res.data.msg !== 'GOOD') {
 					alert(`Error: ${res.data.msg}`);
 				}
 			});
-			await axios.post('/api/ll/login', { userName, password }).then(res => {
+			await axios.post('/api/ll/login', { userName, password }).then((res) => {
 				if (res.data.msg !== 'GOOD') {
 					this.setState({ msg: res.data.msg, loading: false });
 					alert(`Error: ${res.data.msg}`);
@@ -133,7 +132,7 @@ class Login extends Component {
 			});
 		}
 	}
-	keyPress = () => event => {
+	keyPress = () => (event) => {
 		if (event.key === 'Enter' && window.innerWidth >= 1200) {
 			this.Login();
 		}
@@ -168,7 +167,7 @@ class Login extends Component {
 															type="email"
 															value={userName}
 															onKeyPress={this.keyPress()}
-															onChange={e => this.setState({ userName: e.target.value })}
+															onChange={(e) => this.setState({ userName: e.target.value })}
 														/>
 													</h2>
 													<label data-error="Invalid" data-success="Valid" htmlFor="email">
@@ -184,7 +183,7 @@ class Login extends Component {
 															type="password"
 															value={password}
 															onKeyPress={this.keyPress()}
-															onChange={e => this.setState({ password: e.target.value })}
+															onChange={(e) => this.setState({ password: e.target.value })}
 														/>
 													</h2>
 													<label htmlFor="password">Password</label>
@@ -230,7 +229,7 @@ class Login extends Component {
 																id="email"
 																type="email"
 																value={userName}
-																onChange={e => this.setState({ userName: e.target.value })}
+																onChange={(e) => this.setState({ userName: e.target.value })}
 																className="validate"
 															/>
 														</h2>
@@ -251,7 +250,7 @@ class Login extends Component {
 											<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 												<div className="input-field" style={{ width: '40%' }}>
 													<h2 style={{ margin: '0', padding: '0' }}>
-														<input onChange={e => this.setState({ resetCode: e.target.value })} />
+														<input onChange={(e) => this.setState({ resetCode: e.target.value })} />
 													</h2>
 													<label>Reset Code</label>
 												</div>
@@ -266,13 +265,13 @@ class Login extends Component {
 												<h4>New Password</h4>
 												<div className="input-field" style={{ width: '95%' }}>
 													<h2 style={{ margin: '0', padding: '0' }}>
-														<input onChange={e => this.setState({ newPass: e.target.value })} />
+														<input onChange={(e) => this.setState({ newPass: e.target.value })} />
 													</h2>
 													<label>New Password</label>
 												</div>
 												<div className="input-field" style={{ width: '95%' }}>
 													<h2 style={{ margin: '0', padding: '0' }}>
-														<input onChange={e => this.setState({ newPass2: e.target.value })} />
+														<input onChange={(e) => this.setState({ newPass2: e.target.value })} />
 													</h2>
 													<label>Twice</label>
 												</div>

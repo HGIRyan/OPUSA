@@ -1,5 +1,5 @@
 {
-	"name": "ll-software",
+	"name": "opusa",
 	"version": "0.1.0",
 	"private": true,
 	"dependencies": {
@@ -34,6 +34,7 @@
 		"moment-timezone": "^0.5.26",
 		"node-schedule": "^1.3.2",
 		"nodemon": "^2.0.2",
+		"prettier": "^2.0.5",
 		"react": "^16.12.0",
 		"react-chartjs-2": "^2.9.0",
 		"react-color-extractor": "^1.1.2",
@@ -81,7 +82,7 @@
 		]
 	},
 	"main": "server/index.js",
-	"proxy": "http://localhost:4028",
+	"proxy": "http://localhost:4020",
 	"devDependencies": {
 		"eslint": "^6.4.1",
 		"eslint-config-airbnb": "^18.0.1",
@@ -90,8 +91,6 @@
 		"eslint-plugin-jsx-a11y": "^6.2.3",
 		"eslint-plugin-react": "^7.18.0",
 		"eslint-plugin-react-hooks": "^1.7.0",
-		"prettier": "^2.0.5",
-		"pretty-quick": "^1.11.1",
 		"redux-devtools-extension": "^2.13.8"
 	}
 }

@@ -49,8 +49,11 @@ module.exports = {
 			if (type === 'review' && Array.isArray(req.body)) {
 				req.body.map(async (e) => {
 					let { event, timestamp, email, category } = e;
+					let bad = ['bounce', 'dropped', 'spamreport', 'unsubscribe', 'blocked', 'group_unsubscribe', 'group_resubscribe', 'processed'];
+					// let good = ['delivered', 'open', 'click'];
+					// Checking if Category exists proving email came from our Platform
 					if (Array.isArray(category) && category[0] !== 'Error' && category[0] !== 'undefined' && category[0] === 'reviews') {
-						// Check
+						// Check if Customer exists
 						let check = await db.record.check([parseInt(category[2])]);
 						if (parseInt(category[2]) && !email.includes('@sink.sendgrid.net') && category[0] === 'reviews' && check[0]) {
 							let offset = check[0].utc_offset.split('-')[1];
@@ -73,8 +76,17 @@ module.exports = {
 								}
 							} else if (event === 'delivered' && check[0]) {
 								check[0].email_status === 'open' ? null : await db.record.delivered([parseInt(category[2]), event]);
-							} else if (event === 'bounce' || event === 'dropped' || event === 'spamreport' || event === 'unsubscribe' || event === 'deferred') {
+							} else if (bad.some((e) => e.includes(event))) {
 								// Unsubscribe
+								if (!check[0].updated && check[0].last_email === category[1]) {
+									check[0].activity.active.push({
+										date: Moment(timestamp * 1000)
+											.subtract(offset, 'minutes')
+											.format('YYYY-MM-DD'),
+										type: `Error On ${category[1]} || ${event}`,
+									});
+									await db.update.record.activity([parseInt(category[2]), check[0].activity]);
+								}
 								await db.record.unsub([
 									parseInt(category[2]),
 									Moment(timestamp * 1000)
@@ -85,8 +97,6 @@ module.exports = {
 						}
 					}
 				});
-			} else {
-				// res.status(200).send({ msg: 'BAD TYPE' });
 			}
 			res.sendStatus(200);
 		} catch (e) {
@@ -115,6 +125,8 @@ module.exports = {
 		try {
 			let db = req.app.get('db');
 			let { feedback, cust_id, rating, activity, cust, info } = req.body;
+			info = await db.info.specific_business([info.c_id]);
+			info = info[0];
 			if (cust_id.match(/[a-z]/i)) {
 				cust_id = DefaultFun.cUnHash(cust_id);
 			}
@@ -133,7 +145,13 @@ module.exports = {
 					await db.record.update_activity([cust_id, activity]);
 				}
 				// Send Feedback Email
-				if (Array.isArray(info.feedback_alert.alert) ? info.feedback_alert.alert[0] : false) {
+				if (
+					Array.isArray(info.feedback_alert.alert)
+						? info.feedback_alert.alert[0]
+							? info.feedback_alert.alert[0].to !== `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`
+							: false
+						: false
+				) {
 					await module.exports.notificationEmail({ info, rating, cust, feedback });
 				}
 				res.status(200).send({ status: 'GOOD', msg, directF });
@@ -174,6 +192,62 @@ module.exports = {
 			Err.emailMsg(e, 'Record/siteclick');
 		}
 	},
+	fastFeedback: async (req, res) => {
+		let db = req.app.get('db');
+		let { client_id, cust_id, rating, source, cor_id } = req.body;
+		client_id = DefaultFun.cUnHash(client_id);
+		cust_id = DefaultFun.cUnHash(cust_id);
+		// rating = DefaultFun.cUnHash(rating);
+		source = DefaultFun.cUnHash(source);
+		cor_id = DefaultFun.cUnHash(cor_id);
+		let checkRating = await db.record.checks.rating([cust_id]);
+		let og = await db.info.customers.indv_cust([cust_id]);
+		let update = [];
+		if (rating === 'direct') {
+			update = [{}];
+		} else {
+			update = await db.record.reviewFeedback([cust_id, rating, Moment().format('YYYY-MM-DD-/-LTS'), source]);
+		}
+		if (update[0]) {
+			let info = await db.info.specific_business([client_id]);
+			let cust = await db.info.customer([cust_id]);
+			// Update Activity
+			let check = cust[0].activity.active.filter((e) => e.date === Moment().format('YYYY-MM-DD'));
+			if (
+				info[0].feedback_alert.alert.some((e) => e.to !== `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`) &&
+				info[0].feedback_alert.alert.length >= 1 &&
+				rating !== 'direct'
+			) {
+				// check
+				// console.log('SENDING NOTI EMAIL', noti_email[0], cust_id, update[0].last_email);
+				if (parseInt(checkRating[0].rating) === parseInt(rating)) {
+					// console.log(source, cust_id, checkRating);
+					let noti_email = await db.record.checks.noti_email([cust_id, update[0].last_email]);
+					// console.log('here', checkRating);
+					if (noti_email[0] || parseInt(og[0].rating) !== parseInt(rating)) {
+						// Update Noti_email
+						let same = parseInt(og[0].rating) === null ? true : false;
+						await db.record.checks.update_noti_email([cust_id, update[0].last_email]);
+						if (Array.isArray(info[0].feedback_alert.alert) ? info[0].feedback_alert.alert[0] : false) {
+							// console.log('SENDING EMAIL');
+							await module.exports.notificationEmail({ info, rating, cust, same });
+						}
+					}
+				}
+			}
+			if (!check[0]) {
+				await cust[0].activity.active.push({
+					date: Moment().format('YYYY-MM-DD'),
+					type: rating === 'direct' ? 'Clicked Direct Link' : `Left Rating of ${rating}`,
+				});
+				(await update[0].rating_history) ? update[0].rating_history.rating.push(parseInt({ rating: rating, date: Moment().format('YYYY-MM-DD') })) : null;
+				let activity = cust[0].activity;
+				update[0].rating_history ? await db.record.update_rating_history([cust_id, update[0].rating_history]) : null;
+				cust = await db.record.update_activity([cust_id, activity]);
+			}
+			res.status(200).send({ msg: 'GOOD', cust });
+		}
+	},
 	feedback: async (req, res) => {
 		try {
 			let db = req.app.get('db');
@@ -184,6 +258,7 @@ module.exports = {
 			source = DefaultFun.cUnHash(source);
 			cor_id = DefaultFun.cUnHash(cor_id);
 			let og = await db.info.customers.indv_cust([cust_id]);
+			let checkRating = await db.record.checks.rating([cust_id]);
 			let update = [];
 			if (rating === 'direct') {
 				update = [{}];
@@ -202,14 +277,15 @@ module.exports = {
 					rating !== 'direct'
 				) {
 					// check
-					let noti_email = await db.record.checks.noti_email([cust_id, update[0].last_email]);
-					// console.log('SENDING NOTI EMAIL', noti_email[0], cust_id, update[0].last_email);
-					if (noti_email[0] || parseInt(og[0].rating) !== parseInt(rating)) {
-						// Update Noti_email
-						let same = parseInt(og[0].rating) === null ? true : false;
-						await db.record.checks.update_noti_email([cust_id, update[0].last_email]);
-						if (Array.isArray(info[0].feedback_alert.alert) ? info[0].feedback_alert.alert[0] : false) {
-							await module.exports.notificationEmail({ info, rating, cust, same });
+					if (parseInt(checkRating[0].rating) === parseInt(rating)) {
+						let noti_email = await db.record.checks.noti_email([cust_id, update[0].last_email]);
+						if (noti_email[0] || parseInt(og[0].rating) !== parseInt(rating)) {
+							// Update Noti_email
+							let same = parseInt(og[0].rating) === null ? true : false;
+							await db.record.checks.update_noti_email([cust_id, update[0].last_email]);
+							if (Array.isArray(info[0].feedback_alert.alert) ? info[0].feedback_alert.alert[0] : false) {
+								await module.exports.notificationEmail({ info, rating, cust, same });
+							}
 						}
 					}
 				}
@@ -305,7 +381,7 @@ module.exports = {
 										? `<div style="margin: 5% 0;">
 										<hr/>
 										<h6>NEW DIRECT FEEDBACK</h6>
-										<div style="font-size: .8em;">"${feedback}"</div>
+										<div style="font-size: .8em;">" ${feedback} "</div>
 										<hr/>
 									</div>`
 										: ''
@@ -341,7 +417,11 @@ module.exports = {
 							<h3 class='noMargin'>${!same ? 'New' : 'Updated'} Feedback For ${company_name},</h3>
 							<h4 class='noMargin'>${address.street}, ${address.city}, ${address.state}, ${address.zip}</h4>
 						</div>
-						***As a reminder, this customer is now automatically being invited to leave a review online. <br/>They may automatically receive a follow-up email down the road if they don't end up leaving a review within the next few days."
+						${
+							parseInt(rating) >= 4
+								? `***As a reminder, this customer is now automatically being invited to leave a review online. <br/>   They may automatically receive a follow-up email down the road if they don't end up leaving a review within the next few days.`
+								: '***As a reminder, this customer is not invited through our platform to leave an online review. <br/>   They will no longer recieve emails through us. <br/>    They may through their own means leave a public review.'
+						}
 						</body>
 						`,
 					category: ['feedback', 'notification', cust.cus_id.toString(), info.c_id.toString()],
@@ -618,52 +698,47 @@ module.exports = {
 		}
 	},
 	depletedEmails: async (allComp, am) => {
-		if (process.env.REACT_APP_SF_SECURITY_TOKEN) {
-			am.map((e) => {
-				let { email, name } = e;
-				let fil = allComp.filter((el) => {
-					if (process.env.REACT_APP_SF_SECURITY_TOKEN) {
-						if (el.c_api.salesforce) {
-							if (el.c_api.salesforce.accountManager) {
-								if (el.c_api.salesforce.accountManager.email === email && el.customers.reviews[el.customers.reviews.length - 1].remaining <= 50) {
-									return el;
-								}
-							}
+		am.map((e) => {
+			let { email, name } = e;
+			let fil = allComp.filter((el) => {
+				if (el.c_api.salesforce) {
+					if (el.c_api.salesforce.accountManager) {
+						if (el.c_api.salesforce.accountManager.email === email && el.customers.reviews[el.customers.reviews.length - 1].remaining <= 50) {
+							return el;
 						}
 					}
-				});
-				fil = fil.sort((a, b) =>
-					a.customers.reviews[a.customers.reviews.length - 1].remaining > b.customers.reviews[b.customers.reviews.length - 1].remaining ? 1 : -1,
-				);
-				let emailFormat = [
-					{
-						to: { name, email },
-						from: { name: 'Ya Boi Ryan', email: `rhutchison@${process.env.REACT_APP_COMPANY_EXTENSION}.com` },
-						replyTo: `rhutchison@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
-						subject: `You have ${fil.length} clients with depleated lists`,
-						text: `${fil.map((el) => el.company_name + ' ' + el.customers.reviews[el.customers.reviews.length - 1].remaining + '\n').join('')}`,
-						html: `
-						<h3>Here are your weekly depleated lists!</h3>
-						<br/>
-						${fil
-							.map(
-								(el) => `
-							<div>
-								<a href='https://liftlocal.lightning.force.com/lightning/r/Account/${el.c_api.salesforce.sf_id}/view'>${el.company_name}</a>
-								-
-								${el.customers.reviews[el.customers.reviews.length - 1].remaining}
-							</div>
-							<br/>
-							`,
-							)
-							.join('')}
-						
-						`,
-						category: ['depleated', 'notification', '0', '1'],
-					},
-				];
-				require('./Mail/Reviews').sendMail(emailFormat);
+				}
 			});
-		}
+			fil = fil.sort((a, b) =>
+				a.customers.reviews[a.customers.reviews.length - 1].remaining > b.customers.reviews[b.customers.reviews.length - 1].remaining ? 1 : -1,
+			);
+			let emailFormat = [
+				{
+					to: { name, email },
+					from: { name: 'Ya Boi Ryan', email: `rhutchison@${process.env.REACT_APP_COMPANY_EXTENSION}.com` },
+					replyTo: `rhutchison@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
+					subject: `You have ${fil.length} clients with depleated lists`,
+					text: `${fil.map((el) => el.company_name + ' ' + el.customers.reviews[el.customers.reviews.length - 1].remaining + '\n').join('')}`,
+					html: `
+					<h3>Here are your weekly depleated lists!</h3>
+					<br/>
+					${fil
+						.map(
+							(el) => `
+						<div>
+							<a href='https://liftlocal.lightning.force.com/lightning/r/Account/${el.c_api.salesforce.sf_id}/view'>${el.company_name}</a>
+							-
+							${el.customers.reviews[el.customers.reviews.length - 1].remaining}
+						</div>
+						<br/>
+						`,
+						)
+						.join('')}
+						`,
+					category: ['depleated', 'notification', '0', '1'],
+				},
+			];
+			require('./Mail/Reviews').sendMail(emailFormat);
+		});
 	},
 };

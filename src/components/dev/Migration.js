@@ -16,6 +16,7 @@ class Migration extends Component {
 			sf_id: '',
 			res: [],
 			migData: [],
+			migrate: false,
 		};
 	}
 	async componentDidMount() {
@@ -25,86 +26,98 @@ class Migration extends Component {
 	getAgents() {
 		let { info } = this.state;
 		let inStyle = { width: '10%', borderRight: 'solid black' };
+		let not = ['allstate', 'farmers', 'nationwide'];
 		let migData = info
-			.filter(e => e.active)
+			.filter((e) => e.active) //&& !not.some((el) => e.company_name.toLowerCase().includes(el)))
 			.map((e, i) => {
 				return (
-					<div key={i} style={{ width: '80vw', height: '5vh', display: 'flex', alignItems: 'center', justifyContent: 'space-around' }} className="card">
+					<div key={i} style={{ width: '80vw', height: '5vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="card">
 						<h6 style={{ width: '2.5%' }}>{e.c_id}</h6>
-						<h6 style={{ width: '35%' }} onClick={() => this.props.history.push(`/client-dash/${e.cor_id}/${e.c_id}`, this.props.location.state)}>
+						<h6
+							style={{ width: '35%' }}
+							onClick={() => this.props.history.push(`/client-dash/${e.cor_id}/brand-settings/${e.c_id}`, this.props.location.state)}
+						>
 							{e.company_name}
 						</h6>
-						<input
-							style={inStyle}
-							value={e.c_api.salesforce.sf_id}
-							onChange={c => {
-								e.c_api.salesforce.sf_id = c.target.value;
-								info.splice(
-									info.findIndex(el => el.c_id === e.c_id),
-									1,
-									e,
-								);
-								this.setState({ info });
-							}}
-						/>
-						<input
-							style={inStyle}
-							value={e.c_api.internal}
-							onChange={c => {
-								e.c_api.internal = c.target.value;
-								info.splice(
-									info.findIndex(el => el.c_id === e.c_id),
-									1,
-									e,
-								);
-								this.setState({ info });
-							}}
-						/>
-						<input
-							style={inStyle}
-							value={e.c_api.gatherup.business_id}
-							onChange={c => {
-								e.c_api.gatherup.business_id = c.target.value;
-								info.splice(
-									info.findIndex(el => el.c_id === e.c_id),
-									1,
-									e,
-								);
-								this.setState({ info });
-							}}
-						/>
-						<input
-							style={inStyle}
-							value={e.c_api.gatherup.client_id}
-							onChange={c => {
-								e.c_api.gatherup.client_id = c.target.value;
-								info.splice(
-									info.findIndex(el => el.c_id === e.c_id),
-									1,
-									e,
-								);
-								this.setState({ info });
-							}}
-						/>
-						<button
-							className="btn primary-color primary-hover"
-							onClick={async () =>
-								await axios
-									.post('/api/migration/update/api', { e })
-									.then(res => (res.data.msg === 'GOOD' ? this.setState({ msg: `${e.company_name} Updated` }) : alert(res.data.msg)))
-							}
-						>
-							U
-						</button>
-						<button className="btn primary-color primary-hover" onClick={() => this.syncSF(e)}>
-							SF
-						</button>
-						<button className="btn primary-color primary-hover" onClick={() => this.syncG(e)}>
-							G
-						</button>
-						<button className="btn primary-color primary-hover" onClick={() => this.syncI(e)}>
-							I
-						</button>
+						{this.state.migrate ? (
+							<div>
+								<input
+									style={inStyle}
+									value={e.c_api.salesforce.sf_id}
+									onChange={(c) => {
+										e.c_api.salesforce.sf_id = c.target.value;
+										info.splice(
+											info.findIndex((el) => el.c_id === e.c_id),
+											1,
+											e,
+										);
+										this.setState({ info });
+									}}
+								/>
+								<input
+									style={inStyle}
+									value={e.c_api.internal}
+									onChange={(c) => {
+										e.c_api.internal = c.target.value;
+										info.splice(
+											info.findIndex((el) => el.c_id === e.c_id),
+											1,
+											e,
+										);
+										this.setState({ info });
+									}}
+								/>
+								<input
+									style={inStyle}
+									value={e.c_api.gatherup.business_id}
+									onChange={(c) => {
+										e.c_api.gatherup.business_id = c.target.value;
+										info.splice(
+											info.findIndex((el) => el.c_id === e.c_id),
+											1,
+											e,
+										);
+										this.setState({ info });
+									}}
+								/>
+								<input
+									style={inStyle}
+									value={e.c_api.gatherup.client_id}
+									onChange={(c) => {
+										e.c_api.gatherup.client_id = c.target.value;
+										info.splice(
+											info.findIndex((el) => el.c_id === e.c_id),
+											1,
+											e,
+										);
+										this.setState({ info });
+									}}
+								/>
+								<button
+									className="btn primary-color primary-hover"
+									onClick={async () =>
+										await axios
+											.post('/api/migration/update/api', { e })
+											.then((res) => (res.data.msg === 'GOOD' ? this.setState({ msg: `${e.company_name} Updated` }) : alert(res.data.msg)))
+									}
+								>
+									U
+								</button>
+								{/* <button className="btn primary-color primary-hover" onClick={() => this.syncSF(e)}>
+									SF
+								</button> */}
+								<button className="btn primary-color primary-hover" onClick={() => this.syncG(e)}>
+									G
+								</button>
+								<button className="btn primary-color primary-hover" onClick={() => this.syncI(e)}>
+									I
+								</button>
+							</div>
+						) : (
+							<div>
+								<img src={e.logo} style={{ maxHeight: '50px' }} />
+							</div>
+						)}
 					</div>
 				);
 			});
@@ -125,7 +138,7 @@ class Migration extends Component {
 	}
 	async syncSF(og) {
 		console.log('Syncing', og);
-		await axios.post('/api/sync/salesforce', { og }).then(res => {
+		await axios.post('/api/sync/salesforce', { og }).then((res) => {
 			if (res.data.msg === 'GOOD') {
 				console.log('Synced GOOD', og.company_name);
 				this.setState({ msg: `${og.company_name} Synced SalesForce` });
@@ -137,7 +150,7 @@ class Migration extends Component {
 	}
 	async syncG(og) {
 		if (og.c_api.gatherup.business_id && og.c_api.gatherup.client_id) {
-			await axios.post('/api/sync/gatherup', { og }).then(async res => {
+			await axios.post('/api/sync/gatherup', { og }).then(async (res) => {
 				if (res.data.msg === 'GOOD') {
 					console.log('Synced GOOD', og.company_name);
 					this.setState({ msg: `${og.company_name} Synced Gatherup` });
@@ -152,7 +165,7 @@ class Migration extends Component {
 	}
 	async syncI(og) {
 		if (og.c_api.internal) {
-			await axios.post('/api/sync/internal', { og }).then(async res => {
+			await axios.post('/api/sync/internal', { og }).then(async (res) => {
 				if (res.data.msg === 'GOOD') {
 					console.log('Synced GOOD', og.company_name);
 					this.setState({ msg: `${og.company_name} Synced Internal` });
@@ -168,9 +181,9 @@ class Migration extends Component {
 	async gatherAgents() {
 		// let { info, c_id, bus_id, client_id } = this.state;
 		let { info, c_id } = this.state;
-		let check = info.filter(e => parseInt(e.c_id) === parseInt(c_id));
+		let check = info.filter((e) => parseInt(e.c_id) === parseInt(c_id));
 		if (check[0]) {
-			await axios.post('/api/getgatherupcustomer', { c_id, check }).then(res => {
+			await axios.post('/api/getgatherupcustomer', { c_id, check }).then((res) => {
 				if (res.data.msg === 'GOOD') {
 					console.log('WE GOOD');
 				}
@@ -182,9 +195,9 @@ class Migration extends Component {
 	}
 	async updateAPI() {
 		let { info, c_id, bus_id, client_id } = this.state;
-		let check = info.filter(e => parseInt(e.c_id) === parseInt(c_id));
+		let check = info.filter((e) => parseInt(e.c_id) === parseInt(c_id));
 		if (check[0] && client_id) {
-			await axios.post('/api/update/gatherup/credientials', { c_id, bus_id, client_id, check }).then(res => {
+			await axios.post('/api/update/gatherup/credientials', { c_id, bus_id, client_id, check }).then((res) => {
 				if (res.data.msg === 'GOOD') {
 					console.log('WE GOOD');
 				}
@@ -194,14 +207,14 @@ class Migration extends Component {
 		}
 	}
 	async testSF() {
-		await axios.get('/api/salesforce/test').then(res => {
+		await axios.get('/api/salesforce/test').then((res) => {
 			console.log(res.data);
 		});
 	}
 	results() {
 		let { search } = this.state;
 		let res = this.props.location.state.info;
-		res = res.filter(e => e.company_name.toLowerCase().includes(search.toLowerCase()));
+		res = res.filter((e) => e.company_name.toLowerCase().includes(search.toLowerCase()));
 		if (search && res[0]) {
 			return res.map((e, i) => {
 				return (
@@ -244,7 +257,13 @@ class Migration extends Component {
 
 		return (
 			<Layout1 view={{ sect: 'indv', data: data }} match={this.props.match ? this.props.match.params : null} props={this.props}>
-				Migration Page
+				<h6
+					onClick={() => {
+						this.setState({ migrate: !this.state.migrate });
+					}}
+				>
+					Migration Page
+				</h6>
 				{/* <button onClick={() => this.gatherAgents()}> Start Migration </button>
 				<div style={{ display: 'flex', flexDirection: 'column' }}>
 					<h5>C_ID</h5>

@@ -69,10 +69,9 @@ class App extends Component {
 			if (this.props.location.state.user) {
 				if (moment().format('x') >= moment(this.props.location.state.expires).format('x')) {
 					alert('Session Expired \n redirecting to login');
-					await axios.get('/api/ll/logout').then(res => {
+					await axios.get('/api/ll/logout').then((res) => {
 						if (res.data.msg === 'GOOD') {
 							history.replace('/', {});
-							// history.push('/');
 							window.location.reload();
 						}
 					});
@@ -80,7 +79,9 @@ class App extends Component {
 			}
 		}
 		let loca = this.props.history.location.pathname;
-		if (loca !== '/' && !loca.includes('/feedback/rating') && !loca.includes('/feedback/contact') && !loca.includes('/feedback/unsubscribe')) {
+		let noPerm = ['/feedback/rating', '/feedback/contact', '/feedback/unsubscribe', '/test'];
+		if (!noPerm.some((e) => loca.includes(e)) && loca !== '/') {
+			this.setState({ timeout: parseInt(moment().add(45, 'minutes').format('x')) });
 			if (!this.props.location.state) {
 				await this.getUserInfo();
 				await this.setState({ loading: false });
@@ -91,13 +92,17 @@ class App extends Component {
 		} else {
 			await this.setState({ loading: false });
 		}
+		this.checkTimeout();
 	}
 	async componentDidUpdate(prevProps, prevState, snapshot) {
-		if (prevProps.history.location.pathname !== prevProps.location.pathname) {
+		let loca = this.props.history.location.pathname;
+		let noPerm = ['/feedback/rating', '/feedback/contact', '/feedback/unsubscribe', '/test'];
+		if (prevProps.history.location.pathname !== prevProps.location.pathname && !noPerm.some((e) => loca.includes(e)) && loca !== '/') {
 			window.scrollTo({
 				top: 0,
 				behavior: 'smooth',
 			});
+			this.setState({ timeout: parseInt(moment().add(45, 'minutes').format('x')) });
 		}
 		if (
 			prevProps.history.location.pathname !== prevProps.location.pathname &&
@@ -105,13 +110,13 @@ class App extends Component {
 			this.state.reload % 3 === 0 &&
 			this.state.reload !== 0
 		) {
-			await axios.get('/api/ll/resetsession').then(res => {
+			await axios.get('/api/ll/resetsession').then((res) => {
 				if (res.data.msg === 'GOOD') {
 					this.setState({ resetStateModal: false });
 					history.replace('/home', res.data.session);
 					window.location.reload();
 				} else {
-					// alert(res.data.msg);
+					alert('Could Not Fetch Data. Please Logout and Log back in.');
 				}
 			});
 		}
@@ -120,13 +125,12 @@ class App extends Component {
 		}
 	}
 	async getUserInfo() {
-		await axios.get('/api/get-session').then(async res => {
+		await axios.get('/api/get-session').then(async (res) => {
 			if (!res.data.msg) {
-				let info = res.data.info.filter(item => item !== null);
+				let info = res.data.info.filter((item) => item !== null);
 				res.data.info = info;
 				let path = this.props.history.location.pathname;
 				this.props.history.replace(path, res.data);
-				// await this.props.addToUser(res.data);
 			} else {
 				console.log('\x1b[31m%s\x1b[0m', res.data.msg, 'NO');
 				if (
@@ -136,19 +140,34 @@ class App extends Component {
 					!this.props.history.location.pathname.includes('/feedback/unsubscribe')
 				) {
 					this.GoHome();
-					// this.props.history.push('/', this.props.location.pathname);
 				}
 			}
 		});
 	}
 	GoHome() {
 		this.props.history.push('/', this.props.location.pathname);
-		// return <Redirect to="/" prevLink={this.props.location.pathname} />;
 	}
 	componentWillUnmount() {
 		this.abortController.abort();
 	}
-
+	checkTimeout() {
+		if (this.props.location.pathname !== '/') {
+			if (this.state.timeout < parseInt(moment().format('x'))) {
+				console.log('Logging Out Due To Inactivity');
+				axios.get('/api/ll/logout').then((res) => {
+					if (res.data.msg === 'GOOD') {
+						this.setState({ timeout: false });
+						history.replace('/', {});
+						window.location.reload();
+					}
+				});
+			} else {
+				setTimeout(() => {
+					this.checkTimeout();
+				}, 60000);
+			}
+		}
+	}
 	render() {
 		let width = window.innerWidth;
 		let { loading } = this.state;
@@ -162,7 +181,7 @@ class App extends Component {
 				<Route
 					{...rest}
 					render={
-						props => ((i === 'admin' && typeof i !== 'undefined') || Dev ? <Component {...props} redux={this.props.addToUser} /> : () => this.GoHome())
+						(props) => ((i === 'admin' && typeof i !== 'undefined') || Dev ? <Component {...props} redux={this.props.addToUser} /> : () => this.GoHome())
 						//
 					}
 				/>
@@ -179,7 +198,7 @@ class App extends Component {
 			width >= 1200 ? (
 				<Route
 					{...rest}
-					render={props =>
+					render={(props) =>
 						(i === 'admin' && typeof i !== 'undefined') || Dev || (i === 'client' && typeof i !== 'undefined') ? <Component {...props} /> : () => this.GoHome()
 					}
 				/>
@@ -201,8 +220,8 @@ class App extends Component {
 			return (
 				<div>
 					<br /><br /><br /><br /><br />
-					<code>https://ll.liftlocal.com{location.pathname}</code>
-					{' _ _ _ _ _ '}Cannot be found
+					<code>https://ll.liftlocal.com{ location.pathname }</code>
+					{ ' _ _ _ _ _ ' }Cannot be found
 					<hr />
 					404 page
 					<br />
@@ -210,18 +229,18 @@ class App extends Component {
 					<br /><br /><br /><br />
 					<button
 						className="btn primary-color primary-hover"
-						onClick={() => {
-							history.push( '/', {});
-						}}
+						onClick={ () => {
+							history.push( '/', {} );
+						} }
 					>
 						Login
 					</button>
 					<br /><br /><br /><br /><br />
 					<button
 						className="btn primary-color primary-hover"
-						onClick={() => {
+						onClick={ () => {
 							history.goBack();
-						}}
+						} }
 					>
 						Go Back
 					</button>
@@ -248,6 +267,7 @@ class App extends Component {
 					<Switch>
 						<Route exact path="/" component={Login} />
 						<Route path="/feedback/unsubscribe/:cor_id/:cust_id/:client_id" component={Unsubscribe} />
+						<Route path="/feedback/rating/:cor_id/:cust_id/:rating/:source/:client_id/:jwt" component={ReviewLandingPage} />
 						<Route path="/feedback/rating/:cor_id/:cust_id/:rating/:source/:client_id" component={ReviewLandingPage} />
 						<Route path="/feedback/contact/:cor_id/:cust_id/:source/:type/:client_id" component={TypeLandingPage} />
 						<AdminRoute path="/migration" component={Migration} />

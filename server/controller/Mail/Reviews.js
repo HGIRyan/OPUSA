@@ -22,13 +22,13 @@ module.exports = {
 					.send(email)
 					.then(() => {
 						msg ? console.log(msg) : '';
-						console.log(
-							'\x1b[36m%s\x1b[0m',
-							DEV ? 'SENT IN DEV MODE:' : '',
-							today(),
-							email.length ? email.length : 1,
-							`Email${email.length ? 's' : ''} Sent For ${email[0].category[3]}`,
-						);
+						// console.log(
+						// 	'\x1b[36m%s\x1b[0m',
+						// 	DEV ? 'SENT IN DEV MODE:' : '',
+						// 	today(),
+						// 	email.length ? email.length : 1,
+						// 	`Email${email.length ? 's' : ''} Sent For ${email[0].category[3]}`,
+						// );
 					})
 					.catch((error) => {
 						console.log(`Error For ${emails[0].category[3]}`, error.toString(), emails[0].to, emails[0].from, emails[0].category);
@@ -50,21 +50,18 @@ module.exports = {
 			let companies = await db.mail.all_business([offset]).catch((err) => console.log('ERROR:: ', err));
 			companies = companies.filter((comp) => comp.active && comp.active_prod.reviews && comp.c_id);
 			console.log(`Starting First Send to ${companies.length} Companies On`, moment().format('LLLL'), offset);
-			await Promise.all(
-				companies.map(async (comp) => {
+			for (let i = 0; i < companies.length; i++) {
+				const comp = companies[i];
+				setTimeout(async () => {
 					let customers = await db.mail
-						.review_s([
-							comp.c_id,
-							moment().subtract(offset.split('-')[1], 'minutes').subtract(comp.repeat_request.repeat, 'days').format('YYYY-MM-DD'),
-							comp.auto_amt.amt,
-						])
+						.review_s([comp.c_id, moment().subtract(comp.repeat_request.repeat, 'days').format('YYYY-MM-DD'), comp.auto_amt.amt])
 						.catch((err) => console.log('ERROR:: ', err));
-					if (customers[0]) {
+					if (Array.isArray(customers) ? customers[0] : false) {
 						let cust = await Promise.all(
 							customers
 								.filter((i) => i.email.emailValidate() && i.id)
 								.map(async (cust) => {
-									let { first_name, email, feedback_text, id, activity } = cust;
+									let { first_name, email, id, activity } = cust;
 									if (!cust.f_id) {
 										let feed = await db.record.create_feedback([id, 'First Send']).catch((err) => console.log(err));
 										!DEV && PROD ? await db.record.reset_feedback([feed[0].f_id]).catch((err) => console.log(err)) : null;
@@ -97,10 +94,15 @@ module.exports = {
 											name: first_name ? first_name : 'Valued Customer',
 										},
 										from: {
-											email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
+											email: validate.validate(comp.email.email ? (typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good') : 'na')
 												? comp.email.email[0]
-												: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
-											name: comp.owner_name.first + ' ' + comp.owner_name.last,
+												: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+											name:
+												comp.email.fromName === 'firstLast'
+													? comp.owner_name.first + ' ' + comp.owner_name.last
+													: comp.email.fromName === 'businessName'
+													? comp.company_name
+													: comp.owner_name.first + ' ' + comp.owner_name.last,
 										},
 										replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 										subject: !DEV && PROD ? await templates.keywords(comp.s_subject, comp, cust) : `${cust.first_name} DEV FIRST SEND`,
@@ -115,12 +117,12 @@ module.exports = {
 						module.exports.sendMail(cust);
 					} else {
 						// CHECK TO SEE IF THEY HAVE ANY CUSTOMERS AND SEND EXTRA INFO TO AM
-						console.log(`DEPLEATED LIST ${comp.c_id}`);
+						console.log(`DEPLEATED LIST ${comp.c_id} || ${comp.company_name}`);
 						// module.exports.depleatedList(comp);
 						// await Default.depleated(comp);
 					}
-				}),
-			);
+				}, i * 500);
+			}
 		} catch (e) {
 			Err.emailMsg(e, 'Reviews/s_');
 			console.log('ERROR Reviews/s_', e);
@@ -173,8 +175,13 @@ module.exports = {
 											from: {
 												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
 													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
-												name: comp.owner_name.first + ' ' + comp.owner_name.last,
+													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												name:
+													comp.email.fromName === 'firstLast'
+														? comp.owner_name.first + ' ' + comp.owner_name.last
+														: comp.email.fromName === 'businessName'
+														? comp.company_name
+														: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
 											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.fr_subject, comp, cust) : `${cust.first_name} DEV FIRST REMINDER`,
@@ -243,8 +250,13 @@ module.exports = {
 											from: {
 												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
 													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
-												name: comp.owner_name.first + ' ' + comp.owner_name.last,
+													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												name:
+													comp.email.fromName === 'firstLast'
+														? comp.owner_name.first + ' ' + comp.owner_name.last
+														: comp.email.fromName === 'businessName'
+														? comp.company_name
+														: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
 											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.sr_subject, comp, cust) : `${cust.first_name} DEV Second REMINDER`,
@@ -313,8 +325,13 @@ module.exports = {
 											from: {
 												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
 													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
-												name: comp.owner_name.first + ' ' + comp.owner_name.last,
+													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												name:
+													comp.email.fromName === 'firstLast'
+														? comp.owner_name.first + ' ' + comp.owner_name.last
+														: comp.email.fromName === 'businessName'
+														? comp.company_name
+														: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
 											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.or_subject, comp, cust) : `${cust.first_name} DEV OPEN REMINDER`,
@@ -383,8 +400,13 @@ module.exports = {
 											from: {
 												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
 													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
-												name: comp.owner_name.first + ' ' + comp.owner_name.last,
+													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												name:
+													comp.email.fromName === 'firstLast'
+														? comp.owner_name.first + ' ' + comp.owner_name.last
+														: comp.email.fromName === 'businessName'
+														? comp.company_name
+														: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
 											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.pr_subject, comp, cust) : `${cust.first_name} DEV POSITIVE REMINDER`,
@@ -455,8 +477,13 @@ module.exports = {
 											from: {
 												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
 													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '')}.com`,
-												name: comp.owner_name.first + ' ' + comp.owner_name.last,
+													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												name:
+													comp.email.fromName === 'firstLast'
+														? comp.owner_name.first + ' ' + comp.owner_name.last
+														: comp.email.fromName === 'businessName'
+														? comp.company_name
+														: comp.owner_name.first + ' ' + comp.owner_name.last,
 											},
 											replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											subject: !DEV && PROD ? await templates.keywords(comp.spr_subject, comp, cust) : `${cust.first_name} DEV Second Positive REMINDER`,
@@ -542,16 +569,24 @@ module.exports = {
 						!DEV ? await db.record.update_sent([cus_id, moment().format('YYYY-MM-DD'), activity]).catch((err) => console.log(err)) : null;
 						!DEV ? await db.record.update_feedback_rs([cus_id, false, lastEmail]).catch((err) => console.log(err)) : null;
 						let fromEmail =
-							bus.email.email[0] === null || !bus.email.email[0].emailValidate() ? `reviews@${bus.company_name.replace(/\s/g, '')}.com` : bus.email.email[0];
+							bus.email.email[0] === null || !bus.email.email[0].emailValidate()
+								? // ? `reviews@${bus.company_name.replace(/\s/g, '')}.com`
+								  `reviews@${bus.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`
+								: bus.email.email[0];
 						let format = {
 							// Pass through correct object and recieve formatted object to push into array to send through sendgrid
 							to: {
-								email: DEV ? process.env.REACT_APP_DEV_EMAIL : email,
+								email: !DEV ? process.env.REACT_APP_DEV_EMAIL : email,
 								name: first_name ? first_name : 'Valued Customer',
 							},
 							from: {
 								email: fromEmail,
-								name: bus.owner_name.first + ' ' + bus.owner_name.last,
+								name:
+									bus.email.fromName === 'firstLast'
+										? bus.owner_name.first + ' ' + bus.owner_name.last
+										: bus.email.fromName === 'businessName'
+										? bus.company_name
+										: bus.owner_name.first + ' ' + bus.owner_name.last,
 							},
 							replyTo: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 							subject: !DEV && PROD ? await templates.keywords(bus[type.subject], bus, cust) : `${cust.first_name} DEV MANUAL SEND: ${type.email}`,

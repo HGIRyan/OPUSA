@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { NoDiv, LoadingWrapper, StyledReviewLinks, LoadingWrapperSmall } from './../../../utilities/index';
 import axios from 'axios';
 import moment from 'moment';
+import { verify } from 'jsonwebtoken';
 
 class ReviewLandingPage extends Component {
 	constructor() {
@@ -31,19 +32,69 @@ class ReviewLandingPage extends Component {
 		document.body.style.width = '100vw';
 		document.body.style.height = '100vh';
 		this.setState({ w: window.innerWidth, h: window.innerHeight });
-		let { client_id, cust_id, rating, source, cor_id } = this.props.match.params;
-		await axios.post('/api/company_logo', { client_id }).then(res => {
-			if (res.data.msg === 'GOOD') {
-				this.setState({ logo: res.data.logo[0].logo });
+		let { client_id, cust_id, rating, source, cor_id, jwt } = this.props.match.params;
+		if (!jwt) {
+			await axios.post('/api/company_logo', { client_id }).then((res) => {
+				if (res.data.msg === 'GOOD') {
+					this.setState({ logo: res.data.logo[0].logo });
+				}
+			});
+			if (rating <= 5 || rating === 'direct') {
+				await this.rating(client_id, cust_id, rating, source, cor_id);
 			}
-		});
-		if (rating <= 5 || rating === 'direct') {
-			await this.rating(client_id, cust_id, rating, source, cor_id);
+		} else {
+			this.setJWT(jwt);
 		}
 	}
-
+	async setJWT(jwt) {
+		let { client_id, cust_id, rating, source, cor_id } = this.props.match.params;
+		let data = await verify(jwt, process.env.REACT_APP_JWT_SECRET);
+		let { logo, landing, links, company_name, place_id, phone, address, c_id } = data;
+		document.title = company_name;
+		this.setState({ logo: logo });
+		let res = {
+			demoter: landing.d,
+			passive: landing.pass,
+			positive: landing.p,
+			links,
+		};
+		let og = {
+			c_id,
+			logo,
+			company_name,
+			// Whatever is needed on direct-feedback endpoint
+			place_id,
+			phone,
+			address,
+			links,
+		};
+		// Fast Record
+		await axios.post('/api/fast/feedback/reviews/record', { client_id, cust_id, rating, source, cor_id }).then((resp) => {
+			if (resp.data.msg === 'GOOD') {
+				let checkSkip = false;
+				if (rating !== 'direct') {
+					rating = parseInt(rating);
+					if (rating <= 2 && typeof landing.d.skip !== 'undefined') {
+						checkSkip = landing.d.skip;
+					} else if (rating === 3 && typeof landing.pass.skip !== 'undefined') {
+						checkSkip = landing.pass.skip;
+					} else if (rating <= 5 && rating >= 4 && typeof landing.pass.skip !== 'undefined') {
+						checkSkip = landing.p.skip;
+					}
+				}
+				this.setState({ og, res, cust: resp.data.cust[0] });
+				if (rating !== 'direct' && !checkSkip) {
+					this.setState({ loading: false });
+				} else {
+					let item = links.links[0];
+					let index = 0;
+					this.clickSite(item, index);
+				}
+			}
+		});
+	}
 	async rating(client_id, cust_id, rating, source, cor_id) {
-		await axios.post('/api/feedback/reviews/record', { client_id, cust_id, rating, source, cor_id }).then(res => {
+		await axios.post('/api/feedback/reviews/record', { client_id, cust_id, rating, source, cor_id }).then((res) => {
 			res = res.data;
 			if (res.msg === 'GOOD') {
 				let info = res.info[0];
@@ -56,6 +107,7 @@ class ReviewLandingPage extends Component {
 				};
 				let checkSkip = false;
 				if (rating !== 'direct') {
+					rating = parseInt(rating);
 					if (rating <= 2 && typeof resp.demoter.skip !== 'undefined') {
 						checkSkip = resp.demoter.skip;
 					} else if (rating === 3 && typeof resp.passive.skip !== 'undefined') {
@@ -86,14 +138,16 @@ class ReviewLandingPage extends Component {
 		cust.activity.active.push({ date: moment().format('YYYY-MM-DD'), type: 'Left Feedback' });
 		let activity = cust.activity;
 		this.setState({ submitting: true });
-		await axios.post('/api/record/reviews/direct-feedback', { feedback, cust_id, client_id, cor_id, rating, activity, cust, info: this.state.og }).then(res => {
-			res = res.data;
-			if (res.status === 'GOOD') {
-				this.setState({ msg: res.msg, submitting: false });
-			} else {
-				this.setState({ msg: res.msg });
-			}
-		});
+		await axios
+			.post('/api/record/reviews/direct-feedback', { feedback, cust_id, client_id, cor_id, rating, activity, cust, info: this.state.og })
+			.then((res) => {
+				res = res.data;
+				if (res.status === 'GOOD') {
+					this.setState({ msg: res.msg, submitting: false });
+				} else {
+					this.setState({ msg: res.msg });
+				}
+			});
 	}
 	async clickSite(item, i) {
 		// Set Click To True and wich site was clicked
@@ -103,7 +157,7 @@ class ReviewLandingPage extends Component {
 		let { cust_id, client_id, cor_id, rating } = this.props.match.params;
 		cust.activity.active.push({ date: moment().format('YYYY-MM-DD'), type: `Clicked to leave review on ${site}` });
 		let activity = cust.activity;
-		await axios.post('/api/record/reviews/click-site', { site, cust_id, client_id, cor_id, rating, activity, cust }).then(res => {
+		await axios.post('/api/record/reviews/click-site', { site, cust_id, client_id, cor_id, rating, activity, cust }).then((res) => {
 			res = res.data;
 			if (res.status === 'GOOD') {
 				if (rating < 3 && site.toLowerCase() === 'google' && this.state.og.place_id) {
@@ -129,13 +183,15 @@ class ReviewLandingPage extends Component {
 			width: w >= 1100 ? '15vw' : '90vw',
 			margin: '1%',
 		};
-		let siteLogos = site => {
+		let siteLogos = (site) => {
 			if (site === 'Google') {
 				return process.env.REACT_APP_GOOGLE_LOGO;
 			} else if (site === 'Facebook') {
 				return process.env.REACT_APP_FACEBOOK_LOGO;
 			} else if (site === 'Trustpilot') {
 				return process.env.REACT_APP_TRUSTPILOT_LOGO;
+			} else if (site === 'Custom') {
+				return this.state.logo;
 			}
 		};
 		return (
@@ -183,7 +239,7 @@ class ReviewLandingPage extends Component {
 									id="textarea1"
 									className="materialize-textarea"
 									placeholder="Please Leave Your Feedback Here"
-									onChange={e => this.setState({ feedback: e.target.value })}
+									onChange={(e) => this.setState({ feedback: e.target.value })}
 									value={this.state.feedback}
 									type="text"
 									data-length="2555"
@@ -216,13 +272,15 @@ class ReviewLandingPage extends Component {
 							<h6>Or... leave a review here </h6>
 							<div style={{ display: 'flex', flexWrap: 'wrap', width: '30%', justifyContent: 'flex-start' }}>
 								{links.map((e, i) => {
-									let siteLogos = site => {
+									let siteLogos = (site) => {
 										if (site === 'Google') {
 											return process.env.REACT_APP_GOOGLE_LOGO;
 										} else if (site === 'Facebook') {
 											return process.env.REACT_APP_FACEBOOK_LOGO;
 										} else if (site === 'Trustpilot') {
 											return process.env.REACT_APP_TRUSTPILOT_LOGO;
+										} else if (site === 'Custom') {
+											return this.state.logo;
 										}
 									};
 									return (
@@ -262,7 +320,7 @@ class ReviewLandingPage extends Component {
 									id="textarea1"
 									className="materialize-textarea"
 									placeholder="Please Leave Your Feedback Here:"
-									onChange={e => this.setState({ feedback: e.target.value })}
+									onChange={(e) => this.setState({ feedback: e.target.value })}
 									value={this.state.feedback}
 									type="text"
 									data-length="2555"
@@ -307,7 +365,7 @@ class ReviewLandingPage extends Component {
 												id="textarea1"
 												className="materialize-textarea"
 												placeholder="Please Leave Your Feedback Here:"
-												onChange={e => this.setState({ feedback: e.target.value })}
+												onChange={(e) => this.setState({ feedback: e.target.value })}
 												value={this.state.feedback}
 												type="text"
 												data-length="2555"

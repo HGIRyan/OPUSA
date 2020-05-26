@@ -35,7 +35,7 @@ class ReviewEmails extends Component {
 		document.title = `Review Email`;
 		let { client_id } = this.props.match.params;
 		if (Array.isArray(this.props.location.state.info)) {
-			let exists = this.props.location.state.info.filter(item => item.c_id === parseInt(client_id));
+			let exists = this.props.location.state.info.filter((item) => item.c_id === parseInt(client_id));
 			this.setState({ testEmail: this.props.location.state.email });
 			if (exists[0]) {
 				await this.hasEmail(exists[0]);
@@ -89,11 +89,13 @@ class ReviewEmails extends Component {
 			demoter: demoter_landing,
 			passive: passive_landing,
 			positive: positive_landing,
+			// from: info.email.email[0],
+			fromName: info.email.fromName,
 		});
 	}
 	async getEmail() {
 		let { client_id } = this.props.match.params;
-		await axios.get(`/api/get/business_details/${client_id}`).then(res => {
+		await axios.get(`/api/get/business_details/${client_id}`).then((res) => {
 			if (Array.isArray(this.props.location.state.info)) {
 				this.props.location.state.info.push(res.data.info[0]);
 			} else {
@@ -106,7 +108,7 @@ class ReviewEmails extends Component {
 	async changeFormat(val, num) {
 		let { type, format } = this.state;
 		if (!this.state.updateAllSettings) {
-			this.setState(prevState => ({
+			this.setState((prevState) => ({
 				format: { ...prevState.format, [type]: { ...prevState.format[type], [num]: val } },
 				activeFormat: { ...prevState.activeFormat, [num]: val },
 			}));
@@ -117,7 +119,7 @@ class ReviewEmails extends Component {
 			format.or[num] = val;
 			format.pr[num] = val;
 			format.spr[num] = val;
-			this.setState(prevState => ({
+			this.setState((prevState) => ({
 				activeFormat: { ...prevState.activeFormat, [num]: val },
 				format: format,
 			}));
@@ -127,30 +129,30 @@ class ReviewEmails extends Component {
 		let { type } = this.state;
 		if (part.includes('body')) {
 			part = part.split(',')[1];
-			this.setState(prevState => ({
+			this.setState((prevState) => ({
 				emails: { ...prevState.emails, [type]: { ...prevState.emails[type], [`${type}_body`]: { ...prevState.emails[type][`${type}_body`], [part]: val } } },
 			}));
 		} else {
-			this.setState(prevState => ({ ...prevState.emails, [type]: { ...prevState.emails[type], [part]: val } }));
+			this.setState((prevState) => ({ ...prevState.emails, [type]: { ...prevState.emails[type], [part]: val } }));
 		}
 	}
 	async updateSignature(val) {
-		this.setState(prevState => ({
+		this.setState((prevState) => ({
 			emails: { ...prevState.emails, signature: val },
 		}));
 	}
 	async updateLanding(val, part) {
 		let { rating } = this.state;
 		if (rating <= 2) {
-			this.setState(prevState => ({
+			this.setState((prevState) => ({
 				demoter: { ...prevState.demoter, [part]: val },
 			}));
 		} else if (rating === 3) {
-			this.setState(prevState => ({
+			this.setState((prevState) => ({
 				passive: { ...prevState.passive, [part]: val },
 			}));
 		} else if (rating >= 4) {
-			this.setState(prevState => ({
+			this.setState((prevState) => ({
 				positive: { ...prevState.positive, [part]: val },
 			}));
 		}
@@ -181,12 +183,13 @@ class ReviewEmails extends Component {
 		og.spr_body = { spr: emails.spr.spr_body };
 		og.spr_subject = emails.spr.spr_subject;
 		og.signature = emails.signature;
-		await axios.post('/api/indv/review-email/update', { og }).then(res => {
+		og.email.fromName = this.state.fromName;
+		await axios.post('/api/indv/review-email/update', { og }).then((res) => {
 			if (res.data.msg === 'GOOD') {
 				this.setState({ updating: false });
 				if (this.props.location.state.info) {
 					this.props.location.state.info.splice(
-						this.props.location.state.info.findIndex(e => parseInt(e.c_id) === parseInt(og.c_id)),
+						this.props.location.state.info.findIndex((e) => parseInt(e.c_id) === parseInt(og.c_id)),
 						1,
 						og,
 					);
@@ -206,12 +209,12 @@ class ReviewEmails extends Component {
 		og.passive_landing = passive;
 		og.positive_landing = positive;
 		og.demoter_landing = demoter;
-		await axios.post('/api/update/review/landingpage', { og }).then(res => {
+		await axios.post('/api/update/review/landingpage', { og }).then((res) => {
 			this.setState({ updating: false });
 			if (res.data.msg === 'GOOD') {
 				if (this.props.location.state.info) {
 					this.props.location.state.info.splice(
-						this.props.location.state.info.findIndex(e => parseInt(e.c_id) === parseInt(og.c_id)),
+						this.props.location.state.info.findIndex((e) => parseInt(e.c_id) === parseInt(og.c_id)),
 						1,
 						og,
 					);
@@ -226,7 +229,7 @@ class ReviewEmails extends Component {
 	}
 	async updateReviewSubject(val) {
 		let { type } = this.state;
-		this.setState(prevState => ({
+		this.setState((prevState) => ({
 			emails: {
 				...prevState.emails,
 				[type]: { ...prevState.emails[type], [`${type}_subject`]: val },
@@ -246,11 +249,11 @@ class ReviewEmails extends Component {
 	async updateSkip(val) {
 		let { rating } = this.state;
 		if (rating <= 2) {
-			this.setState(prevState => ({ demoter: { ...prevState.demoter, skip: val === '1' ? true : false } }));
+			this.setState((prevState) => ({ demoter: { ...prevState.demoter, skip: val === '1' ? true : false } }));
 		} else if (rating === 3) {
-			this.setState(prevState => ({ passive: { ...prevState.passive, skip: val === '1' ? true : false } }));
+			this.setState((prevState) => ({ passive: { ...prevState.passive, skip: val === '1' ? true : false } }));
 		} else {
-			this.setState(prevState => ({ positive: { ...prevState.positive, skip: val === '1' ? true : false } }));
+			this.setState((prevState) => ({ positive: { ...prevState.positive, skip: val === '1' ? true : false } }));
 		}
 	}
 	async testEmail() {
@@ -260,12 +263,13 @@ class ReviewEmails extends Component {
 				email: this.state.testEmail,
 				activity: { active: [] },
 				cus_id: 1811865,
+				f_id: 907586,
 			},
 		];
 		let bus = this.state.og;
 		let type = { email: this.state.type, subject: `${this.state.type}_subject` };
 		this.setState({ sending: true });
-		await axios.post('/api/request/send', { selected, bus, type }).then(async res => {
+		await axios.post('/api/request/send', { selected, bus, type }).then(async (res) => {
 			if (res.data.msg === 'GOOD') {
 				this.setState({ msg: `Sent ${res.data.sent} email${res.data.sent > 1 ? 's' : ''}`, selected: [], sending: false });
 				// await this.GetCustomerInfo(og);
@@ -298,8 +302,8 @@ class ReviewEmails extends Component {
 							<NoDiv direction="column" width="40%">
 								<h3>Feedback Request Settings</h3>
 								<hr style={{ marginLeft: '.25%', width: '80%' }} />
-								<div style={{ width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-									<label htmlFor="email" style={{ marginRight: '-10vw', marginTop: '-4vh' }}>
+								<div style={{ width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+									<label htmlFor="email" style={{ marginRight: '-3.5vw', marginTop: '-4vh' }}>
 										From Email:{' '}
 									</label>
 									<div className="input-field" style={{ marginBottom: '-5%' }}>
@@ -311,12 +315,37 @@ class ReviewEmails extends Component {
 											type="text"
 											className="validate"
 											value={from}
-											onChange={e => this.setState({ from: e.target.value })}
+											onChange={(e) => this.setState({ from: e.target.value })}
 											autoFocus
 											disabled={perm !== 'admin'}
 										/>
 										<span className="helper-text" data-error="Invalid Email Format" data-success="" />
 									</div>
+								</div>
+								{/* <hr style={{ marginLeft: '.25%', width: '80%' }} /> */}
+								<h5>From Name</h5>
+								<div style={{ width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+									<label>
+										<input
+											type="checkbox"
+											checked={this.state.fromName === 'businessName'}
+											onChange={async () => this.setState({ fromName: 'businessName' })}
+											disabled={perm !== 'admin'}
+										/>
+										<span>Business Name</span>
+									</label>
+									<label>
+										<input
+											type="checkbox"
+											checked={this.state.fromName === 'firstLast' || this.state.fromName !== 'businessName'}
+											onChange={async () => this.setState({ fromName: 'firstLast' })}
+											disabled={perm !== 'admin'}
+										/>
+										<span>First + Last Name</span>
+									</label>
+								</div>
+								<hr style={{ marginLeft: '.25%', width: '80%' }} />
+								<div style={{ width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
 									<label style={{ marginTop: '5%' }}>
 										<input
 											type="checkbox"
@@ -329,7 +358,7 @@ class ReviewEmails extends Component {
 								</div>
 								<div style={{ width: '80%' }} className="input-field">
 									<h5>Email Type</h5>
-									<Select value={type} onChange={e => this.setState({ type: e.target.value, activeFormat: format[e.target.value] })}>
+									<Select value={type} onChange={(e) => this.setState({ type: e.target.value, activeFormat: format[e.target.value] })}>
 										<option value="s">Standard First Send</option>
 										<option value="fr">First Reminder</option>
 										<option value="sr">Second Reminder</option>
@@ -340,7 +369,7 @@ class ReviewEmails extends Component {
 								</div>
 								<div style={{ height: '30%', width: '80%' }} className="input-field">
 									<h5>Header</h5>
-									<Select value={this.state.activeFormat.one} onChange={e => this.changeFormat(e.target.value, 'one')} disabled={perm !== 'admin'}>
+									<Select value={this.state.activeFormat.one} onChange={(e) => this.changeFormat(e.target.value, 'one')} disabled={perm !== 'admin'}>
 										<option value="1">Logo Header</option>
 										<option value="2">No Logo</option>
 										{/* <option value="3">3</option> */}
@@ -348,7 +377,7 @@ class ReviewEmails extends Component {
 								</div>
 								<div style={{ height: '30%', width: '80%' }} className="input-field">
 									<h5>Feedback</h5>
-									<Select value={this.state.activeFormat.two} onChange={e => this.changeFormat(e.target.value, 'two')} disabled={perm !== 'admin'}>
+									<Select value={this.state.activeFormat.two} onChange={(e) => this.changeFormat(e.target.value, 'two')} disabled={perm !== 'admin'}>
 										<option value="1" disabled={type === 'pr'}>
 											1 - 5 Feedback
 										</option>
@@ -358,7 +387,7 @@ class ReviewEmails extends Component {
 								</div>
 								<div style={{ height: '30%', width: '80%' }} className="input-field">
 									<h5>Signature</h5>
-									<Select value={this.state.activeFormat.three} onChange={e => this.changeFormat(e.target.value, 'three')} disabled={perm !== 'admin'}>
+									<Select value={this.state.activeFormat.three} onChange={(e) => this.changeFormat(e.target.value, 'three')} disabled={perm !== 'admin'}>
 										<option value="1">Company Info</option>
 										<option value="2">Company Info + Logo</option>
 										<option value="3">Custom Signature</option>
@@ -388,7 +417,7 @@ class ReviewEmails extends Component {
 											type="text"
 											className="validate"
 											value={this.state.emails ? this.state.emails[type][`${type}_subject`] : 'Subject'}
-											onChange={e => this.updateReviewSubject(e.target.value)}
+											onChange={(e) => this.updateReviewSubject(e.target.value)}
 										/>
 										<span className="helper-text" data-error="Invalid Subject" data-success="" />
 									</h2>
@@ -417,7 +446,7 @@ class ReviewEmails extends Component {
 												type="text"
 												className="validate"
 												value={this.state.testEmail}
-												onChange={e => this.setState({ testEmail: e.target.value })}
+												onChange={(e) => this.setState({ testEmail: e.target.value })}
 											/>
 											<span className="helper-text" data-error="Invalid Subject" data-success="" />
 										</h2>
@@ -443,7 +472,7 @@ class ReviewEmails extends Component {
 								<hr style={{ marginLeft: '0' }} />
 								<div className="input-field">
 									<label style={{ margin: '0' }}>Rating:</label>
-									<Select value={this.state.rating.toString()} onChange={e => this.setState({ rating: parseInt(e.target.value) })}>
+									<Select value={this.state.rating.toString()} onChange={(e) => this.setState({ rating: parseInt(e.target.value) })}>
 										<option value="2">1-2</option>
 										<option value="3">3</option>
 										<option value="4">4-5</option>
@@ -451,7 +480,7 @@ class ReviewEmails extends Component {
 								</div>
 								<div className="input-field">
 									<label style={{ margin: '0' }}>Skip Landing:</label>
-									<Select value={this.checkSkip()} onChange={e => this.updateSkip(e.target.value)} disabled={perm !== 'admin'}>
+									<Select value={this.checkSkip()} onChange={(e) => this.updateSkip(e.target.value)} disabled={perm !== 'admin'}>
 										<option value="0">Do Not Skip</option>
 										<option value="1">Skip</option>
 									</Select>

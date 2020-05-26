@@ -8,7 +8,7 @@ class Page4 extends Component {
 	}
 
 	render() {
-		let { keyval, rankKey, updateInput, addKey, submit } = this.props;
+		let { keyval, rankKey, updateInput, addKey, submit, state } = this.props;
 		return (
 			<div style={{ display: 'flex', flexDirection: 'column', width: '90%', justifyContent: 'flex-start' }}>
 				<h5>Add KeyWords</h5>
@@ -50,7 +50,7 @@ class Page4 extends Component {
 					<div style={{ width: '50%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0%' }}>
 						<div className="input-field" style={{ width: '60%' }}>
 							<h2 style={{ margin: '2.5% 0' }}>
-								<input value={this.state.sf_key} onChange={(e) => updateInput('sf_key', e.target.value)} />
+								<input value={state.sf_key} onChange={(e) => updateInput('sf_key', e.target.value)} />
 							</h2>
 							<label>SF API</label>
 						</div>
@@ -60,12 +60,12 @@ class Page4 extends Component {
 			{this.state.sfSync ? <p>SYNCED</p> : null} */}
 					</div>
 				) : null}
-				<LoadingWrapperSmall loading={this.state.submitting}>
+				<LoadingWrapperSmall loading={state.submitting}>
 					<button
 						className="btn primary-color primary-hover"
 						onClick={() => submit()}
 						style={{ width: '100%', marginLeft: '10%' }}
-						disabled={!this.state.sf_key && process.env.REACT_APP_SF_SECURITY_TOKEN}
+						disabled={!state.sf_key && process.env.REACT_APP_SF_SECURITY_TOKEN}
 					>
 						Submit
 					</button>

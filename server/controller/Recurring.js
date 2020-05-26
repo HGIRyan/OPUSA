@@ -3,6 +3,7 @@ let axios = require('axios');
 let Defaults = require('./Defaults');
 const { SF_SECRET, REACT_APP_SF_SECURITY_TOKEN, SF_USERNAME, SF_PASSWORD } = process.env;
 var jsforce = require('jsforce');
+const moment = require('moment');
 
 module.exports = {
 	syncSF: async (app) => {
@@ -85,22 +86,24 @@ module.exports = {
 					return res;
 				});
 			accounts = accounts.records.filter((e) => e.Days_to_Next_Contact_Date__c >= 0 && e.Days_to_Next_Contact_Date__c !== null);
-			accounts.map(async (e) => {
-				await conn.sobject('Account').update(
-					{
-						Id: e.Id,
-						Next_Contact_Date__c: moment()
-							.add(Math.floor(Math.random() * (8 - 4) + 3), 'days')
-							.format(),
-					},
-					function (err, ret) {
-						if (err || !ret.success) {
-							return console.error('Record/CustCount', err, ret);
-						}
-					},
-				);
+			accounts.map(async (e, i) => {
+				if (i % 2 === 0) {
+					await conn.sobject('Account').update(
+						{
+							Id: e.Id,
+							Next_Contact_Date__c: moment()
+								.add(Math.floor(Math.random() * (8 - 3) + 3), 'days')
+								.format(),
+						},
+						function (err, ret) {
+							if (err || !ret.success) {
+								return console.error('Record/CustCount', err, ret);
+							}
+						},
+					);
+				}
 			});
-			console.log('Accounts', accounts);
+			// console.log('Accounts', accounts);
 		}
 	},
 };
