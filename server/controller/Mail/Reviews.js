@@ -94,9 +94,12 @@ module.exports = {
 											name: first_name ? first_name : 'Valued Customer',
 										},
 										from: {
-											email: validate.validate(comp.email.email ? (typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good') : 'na')
-												? comp.email.email[0]
-												: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+											email:
+												process.env.REACT_APP_VERTICLES === 'false'
+													? validate.validate(comp.email.email ? (typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good') : 'na')
+														? comp.email.email[0]
+														: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`
+													: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 											name:
 												comp.email.fromName === 'firstLast'
 													? comp.owner_name.first + ' ' + comp.owner_name.last
@@ -173,9 +176,12 @@ module.exports = {
 												name: first_name ? first_name : 'Valued Customer',
 											},
 											from: {
-												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
-													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												email:
+													process.env.REACT_APP_VERTICLES === 'false'
+														? validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
+															? comp.email.email[0]
+															: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`
+														: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 												name:
 													comp.email.fromName === 'firstLast'
 														? comp.owner_name.first + ' ' + comp.owner_name.last
@@ -248,9 +254,12 @@ module.exports = {
 												name: first_name ? first_name : 'Valued Customer',
 											},
 											from: {
-												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
-													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												email:
+													process.env.REACT_APP_VERTICLES === 'false'
+														? validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
+															? comp.email.email[0]
+															: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`
+														: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 												name:
 													comp.email.fromName === 'firstLast'
 														? comp.owner_name.first + ' ' + comp.owner_name.last
@@ -323,9 +332,12 @@ module.exports = {
 												name: first_name ? first_name : 'Valued Customer',
 											},
 											from: {
-												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
-													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												email:
+													process.env.REACT_APP_VERTICLES === 'false'
+														? validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
+															? comp.email.email[0]
+															: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`
+														: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 												name:
 													comp.email.fromName === 'firstLast'
 														? comp.owner_name.first + ' ' + comp.owner_name.last
@@ -398,9 +410,12 @@ module.exports = {
 												name: first_name ? first_name : 'Valued Customer',
 											},
 											from: {
-												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
-													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												email:
+													process.env.REACT_APP_VERTICLES === 'false'
+														? validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
+															? comp.email.email[0]
+															: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`
+														: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 												name:
 													comp.email.fromName === 'firstLast'
 														? comp.owner_name.first + ' ' + comp.owner_name.last
@@ -475,9 +490,12 @@ module.exports = {
 												name: first_name ? first_name : 'Valued Customer',
 											},
 											from: {
-												email: validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
-													? comp.email.email[0]
-													: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`,
+												email:
+													process.env.REACT_APP_VERTICLES === 'false'
+														? validate.validate(typeof comp.email.email[0] === 'string' ? comp.email.email[0] : 'not good')
+															? comp.email.email[0]
+															: `reviews@${comp.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`
+														: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`,
 												name:
 													comp.email.fromName === 'firstLast'
 														? comp.owner_name.first + ' ' + comp.owner_name.last
@@ -569,14 +587,15 @@ module.exports = {
 						!DEV ? await db.record.update_sent([cus_id, moment().format('YYYY-MM-DD'), activity]).catch((err) => console.log(err)) : null;
 						!DEV ? await db.record.update_feedback_rs([cus_id, false, lastEmail]).catch((err) => console.log(err)) : null;
 						let fromEmail =
-							bus.email.email[0] === null || !bus.email.email[0].emailValidate()
-								? // ? `reviews@${bus.company_name.replace(/\s/g, '')}.com`
-								  `reviews@${bus.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`
-								: bus.email.email[0];
+							process.env.REACT_APP_VERTICLES === 'false'
+								? validate.validate(typeof bus.email.email[0] === 'string' ? bus.email.email[0] : 'not good')
+									? bus.email.email[0]
+									: `reviews@${bus.company_name.replace(/\s/g, '').replace(/[^\w\s]/gi, '')}.com`
+								: `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`;
 						let format = {
 							// Pass through correct object and recieve formatted object to push into array to send through sendgrid
 							to: {
-								email: !DEV ? process.env.REACT_APP_DEV_EMAIL : email,
+								email: DEV ? process.env.REACT_APP_DEV_EMAIL : email,
 								name: first_name ? first_name : 'Valued Customer',
 							},
 							from: {
