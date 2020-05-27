@@ -78,9 +78,10 @@ class ReviewLandingPage extends Component {
 						checkSkip = landing.d.skip;
 					} else if (rating === 3 && typeof landing.pass.skip !== 'undefined') {
 						checkSkip = landing.pass.skip;
-					} else if (rating <= 5 && rating >= 4 && typeof landing.pass.skip !== 'undefined') {
+					} else if (rating <= 5 && rating >= 4 && typeof landing.p.skip !== 'undefined') {
 						checkSkip = landing.p.skip;
 					}
+					console.log(rating, checkSkip, landing);
 				}
 				this.setState({ og, res, cust: resp.data.cust[0] });
 				if (rating !== 'direct' && !checkSkip) {
@@ -467,7 +468,7 @@ class ReviewLandingPage extends Component {
 						className={w >= 1100 ? 'card' : ''}
 					>
 						{/*Logo Header*/}
-						{og ? <img src={og.logo} alt={`${og.company_name}'s Company Logo`} /> : null}
+						{og ? <img src={og.logo} alt={`${og.company_name}'s Company Logo`} style={{ maxHeight: '15vh' }} /> : null}
 						{/*Body And Thanks*/}
 						<p className="noOverFlow" style={(textStyle, { margin: w >= 1100 ? '' : '20% 0', fontSize: w >= 1100 ? '1.2em' : '1.5em', width: '80%' })}>
 							{body}
