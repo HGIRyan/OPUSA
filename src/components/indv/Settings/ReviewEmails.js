@@ -262,8 +262,8 @@ class ReviewEmails extends Component {
 				first_name: 'Ryan',
 				email: this.state.testEmail,
 				activity: { active: [] },
-				cus_id: 1811865,
-				f_id: 907586,
+				cus_id: parseInt(process.env.REACT_APP_CUS_ID),
+				f_id: parseInt(process.env.REACT_APP_F_ID),
 			},
 		];
 		let bus = this.state.og;
