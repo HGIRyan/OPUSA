@@ -348,6 +348,7 @@ module.exports = {
 					og.c_api,
 				])
 				.catch((err) => console.log('UPDATE COMPANY ERR::', err));
+			console.log('IM UPDATEING');
 			let updatePlace = await req.app.get('db').update.place_id([og.c_id, og.place_id]);
 			if (updated[0] && req.session.user && updatePlace[0]) {
 				req.session.user.info.map((item, i) => {

@@ -166,7 +166,6 @@ module.exports = {
 							info.placeId,
 							Default.performance_report(defaults.settings.frequency, info.email),
 							Default.feedback_alert('all', feedEmail),
-							Default.reportHistory(),
 							Default.review_links(info.links),
 						])
 						.catch((err) => {
@@ -333,15 +332,7 @@ module.exports = {
 					});
 				let from_email = bus[0].from_email;
 				await db.create
-					.report_setting([
-						co_id,
-						from_email,
-						info.placeId,
-						bus[0].performance_report,
-						bus[0].feedback_alert,
-						Default.reportHistory(),
-						Default.review_links(info.links),
-					])
+					.report_setting([co_id, from_email, info.placeId, bus[0].performance_report, bus[0].feedback_alert, Default.review_links(info.links)])
 					.catch((err) => {
 						console.log('ERROR:: report_setting', err);
 						error = true;

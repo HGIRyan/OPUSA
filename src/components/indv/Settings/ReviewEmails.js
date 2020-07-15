@@ -5,7 +5,7 @@ import ReviewEmail from '../../all/function/Email';
 import ReviewLanding from '../../all/function/ReviewLanding';
 import axios from 'axios';
 import { Select } from 'react-materialize';
-
+import { FeedSet } from './EmailSettings';
 class ReviewEmails extends Component {
 	constructor() {
 		super();
@@ -257,6 +257,7 @@ class ReviewEmails extends Component {
 		}
 	}
 	async testEmail() {
+		await this.saveEmail();
 		let selected = [
 			{
 				first_name: 'Ryan',
@@ -280,7 +281,7 @@ class ReviewEmails extends Component {
 		});
 	}
 	render() {
-		let { type, from, emails, og, format } = this.state;
+		let { type, emails, og } = this.state;
 		let perm = this.props.location.state.permissions;
 		let width = window.innerWidth;
 		return (
@@ -299,115 +300,12 @@ class ReviewEmails extends Component {
 							</LoadingWrapperSmall>
 						) : null}
 						<NoDiv width="95%" margin={width >= 1500 ? '0 0 2.5% 0' : '0 0 2.5% 10%'}>
-							<NoDiv direction="column" width="40%">
-								<h3>Feedback Request Settings</h3>
-								<hr style={{ marginLeft: '.25%', width: '80%' }} />
-								<div style={{ width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-									<label htmlFor="email" style={{ marginRight: '-3.5vw', marginTop: '-4vh' }}>
-										From Email:{' '}
-									</label>
-									<div className="input-field" style={{ marginBottom: '-5%' }}>
-										<i className="material-icons prefix" style={{ marginTop: '5%' }}>
-											email
-										</i>
-										<input
-											id="email"
-											type="text"
-											className="validate"
-											value={from}
-											onChange={(e) => this.setState({ from: e.target.value })}
-											autoFocus
-											disabled={perm !== 'admin'}
-										/>
-										<span className="helper-text" data-error="Invalid Email Format" data-success="" />
-									</div>
-								</div>
-								{/* <hr style={{ marginLeft: '.25%', width: '80%' }} /> */}
-								<h5>From Name</h5>
-								<div style={{ width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-									<label>
-										<input
-											type="checkbox"
-											checked={this.state.fromName === 'businessName'}
-											onChange={async () => this.setState({ fromName: 'businessName' })}
-											disabled={perm !== 'admin'}
-										/>
-										<span>Business Name</span>
-									</label>
-									<label>
-										<input
-											type="checkbox"
-											checked={this.state.fromName === 'firstLast' || this.state.fromName !== 'businessName'}
-											onChange={async () => this.setState({ fromName: 'firstLast' })}
-											disabled={perm !== 'admin'}
-										/>
-										<span>First + Last Name</span>
-									</label>
-								</div>
-								<hr style={{ marginLeft: '.25%', width: '80%' }} />
-								<div style={{ width: '80%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-									<label style={{ marginTop: '5%' }}>
-										<input
-											type="checkbox"
-											checked={this.state.updateAllSettings}
-											onChange={async () => this.setState({ updateAllSettings: !this.state.updateAllSettings })}
-											disabled={perm !== 'admin'}
-										/>
-										<span>Change All Email Settings</span>
-									</label>
-								</div>
-								<div style={{ width: '80%' }} className="input-field">
-									<h5>Email Type</h5>
-									<Select value={type} onChange={(e) => this.setState({ type: e.target.value, activeFormat: format[e.target.value] })}>
-										<option value="s">Standard First Send</option>
-										<option value="fr">First Reminder</option>
-										<option value="sr">Second Reminder</option>
-										<option value="or">Opened Reminder</option>
-										<option value="pr">Positive Feedback Reminder</option>
-										<option value="spr">Second Positive Reminder</option>
-									</Select>
-								</div>
-								<div style={{ height: '30%', width: '80%' }} className="input-field">
-									<h5>Header</h5>
-									<Select value={this.state.activeFormat.one} onChange={(e) => this.changeFormat(e.target.value, 'one')} disabled={perm !== 'admin'}>
-										<option value="1">Logo Header</option>
-										<option value="2">No Logo</option>
-										{/* <option value="3">3</option> */}
-									</Select>
-								</div>
-								<div style={{ height: '30%', width: '80%' }} className="input-field">
-									<h5>Feedback</h5>
-									<Select value={this.state.activeFormat.two} onChange={(e) => this.changeFormat(e.target.value, 'two')} disabled={perm !== 'admin'}>
-										<option value="1" disabled={type === 'pr'}>
-											1 - 5 Feedback
-										</option>
-										<option value="2">Direct Feedback</option>
-										{/* <option value="3">3</option> */}
-									</Select>
-								</div>
-								<div style={{ height: '30%', width: '80%' }} className="input-field">
-									<h5>Signature</h5>
-									<Select value={this.state.activeFormat.three} onChange={(e) => this.changeFormat(e.target.value, 'three')} disabled={perm !== 'admin'}>
-										<option value="1">Company Info</option>
-										<option value="2">Company Info + Logo</option>
-										<option value="3">Custom Signature</option>
-										{/* <option value="3">3</option> */}
-									</Select>
-								</div>
-								{/* <h4>Email Process</h4>
-								<hr />
-								<label style={{ width: '30%' }}>
-									<input type="checkbox" checked={Process === 'Spray'} onChange={() => this.setState({ Process: 'Spray' })} />
-									<span className="tab">Spray and Pray</span>
-								</label>
-								<p>Same email will be sent to all clients</p>
-								<hr />
-								<label style={{ width: '30%' }}>
-									<input type="checkbox" checked={Process === 'Tree'} disabled onChange={() => this.setState({ Process: 'Tree' })} />
-									<span className="tab">Binary Tree</span>
-								</label>
-								<p style={{ width: '60%' }}>Different process path for each email depending on information correlated with that email</p> */}
-							</NoDiv>
+							<FeedSet
+								{...this.props}
+								updateState={(t, v) => (Array.isArray(t) ? t.forEach((e) => this.setState({ [e.t]: e.v })) : this.setState({ [t]: v }))}
+								state={this.state}
+								changeFormat={this.changeFormat.bind(this)}
+							/>
 							<NoDiv width="50%" direction="column" just="center">
 								<div className="input-field" style={{ minWidth: '50%', marginLeft: '6%', marginBottom: '0' }}>
 									<h2 style={{ margin: '0' }}>
@@ -456,7 +354,7 @@ class ReviewEmails extends Component {
 									</div>
 									<LoadingWrapperSmall loading={this.state.sending}>
 										<button className="btn primary-color primary-hover" onClick={() => this.testEmail()}>
-											Send Test
+											Save & Test
 										</button>
 									</LoadingWrapperSmall>
 								</div>

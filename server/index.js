@@ -59,17 +59,6 @@ if (PROD) {
 		}),
 	);
 }
-app.use(async function (req, res, next) {
-	if (DEV) {
-		let db = req.app.get('db');
-		// await Auth.loginBypass(db, req, next);
-		next();
-		// cron.scheduleJob(`50 ${moment().format('m') % 2 == 0 ? moment().format('m') : '0'} * * * *`, async () => {
-		// });
-	} else {
-		next();
-	}
-});
 massive(DB_CONNECTION_STRING).then(async (db) => {
 	await app.set('db', db);
 	// *** IM LISTENING! *** //
@@ -102,6 +91,7 @@ app.post('/api/ll/reset/newpass', Auth.newPass);
 app.post('/api/update/user-info', Auth.updateLoginInfo);
 app.get('/api/get/business_users/:cor_id', Auth.getUsers);
 app.post('/api/update/user', Auth.updateUser);
+app.post('/api/remove/user', Auth.removeUser);
 //REPORTS
 app.get('/api/all-sent-stats/:date', Info.allSentStats);
 app.post('/api/site/html', Info.siteHTML);

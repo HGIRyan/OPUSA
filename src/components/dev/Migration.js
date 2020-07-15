@@ -26,7 +26,7 @@ class Migration extends Component {
 	getAgents() {
 		let { info } = this.state;
 		let inStyle = { width: '10%', borderRight: 'solid black' };
-		let not = ['allstate', 'farmers', 'nationwide'];
+		// let not = ['allstate', 'farmers', 'nationwide'];
 		let migData = info
 			.filter((e) => e.active) //&& !not.some((el) => e.company_name.toLowerCase().includes(el)))
 			.map((e, i) => {
@@ -115,7 +115,7 @@ class Migration extends Component {
 							</div>
 						) : (
 							<div>
-								<img src={e.logo} style={{ maxHeight: '50px' }} />
+								<img src={e.logo} style={{ maxHeight: '50px' }} alt={e.company_name} />
 							</div>
 						)}
 					</div>

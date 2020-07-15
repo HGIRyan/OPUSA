@@ -35,17 +35,19 @@ module.exports = {
 				let loginInfo = await db.info.login([userName]);
 				let info = await db.info.all_business([]);
 				let industry = await db.info.industries([]);
-				req.session.user = {
-					user: true,
-					email: loginInfo[0].email,
-					userName: loginInfo[0].username,
-					userInfo: loginInfo[0],
-					permissions: loginInfo[0].permission,
-					sub_perm: loginInfo[0].sub_perm,
-					industry,
-					info,
-					expires: moment(req.session.cookie.expires).format('x'),
-				};
+				if (loginInfo[0]) {
+					req.session.user = {
+						user: true,
+						email: loginInfo[0].email,
+						userName: loginInfo[0].username,
+						userInfo: loginInfo[0],
+						permissions: loginInfo[0].permission,
+						sub_perm: loginInfo[0].sub_perm,
+						industry,
+						info,
+						expires: moment(req.session.cookie.expires).format('x'),
+					};
+				}
 				res.status(200).send({ msg: 'GOOD', session: req.session.user });
 			} else {
 				if (req.session.user) {
@@ -281,5 +283,10 @@ module.exports = {
 		} else {
 			res.status(200).send({ msg: 'Username or Email Already Taken' });
 		}
+	},
+	removeUser: async (req, res) => {
+		let { user_id } = req.body.data;
+		await req.app.get('db').auth.remove_user([user_id]);
+		res.status(200).send({ msg: 'good' });
 	},
 };

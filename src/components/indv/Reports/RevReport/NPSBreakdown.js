@@ -2,7 +2,24 @@ import React from 'react';
 import ReactTooltip from 'react-tooltip';
 
 function NPSBreakdown(props) {
-	let { nps, promoters, demoters, tot, passives, promPerc, demPerc } = props;
+	let { promoters, demoters, passives, responses } = props;
+	let nps = 100;
+	let tot = 0;
+	let promPerc = Math.floor((promoters.length / responses) * 100);
+	let demPerc = Math.floor((demoters.length / responses) * 100);
+	let passPerc = Math.floor((passives.length / responses) * 100);
+	if (promPerc + demPerc + passPerc !== 100) {
+		let num = Math.abs(promPerc + demPerc + passPerc - 100);
+		if (promPerc + demPerc + passPerc > 100) {
+			promPerc = promPerc - num;
+		} else {
+			promPerc = promPerc + num;
+		}
+	}
+	if (Array.isArray(promoters) && Array.isArray(passives) && Array.isArray(demoters)) {
+		tot = promoters.length + passives.length + demoters.length;
+		nps = promPerc - demPerc;
+	}
 	let def = { padding: '0', margin: '0', display: 'flex', alignItems: 'center' };
 	return (
 		<div style={(def, { display: 'flex', flexDirection: 'column', width: '30%', height: '35vh', alignItems: 'center' })} className="card">

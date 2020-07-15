@@ -81,7 +81,6 @@ class ReviewLandingPage extends Component {
 					} else if (rating <= 5 && rating >= 4 && typeof landing.p.skip !== 'undefined') {
 						checkSkip = landing.p.skip;
 					}
-					console.log(rating, checkSkip, landing);
 				}
 				this.setState({ og, res, cust: resp.data.cust[0] });
 				if (rating !== 'direct' && !checkSkip) {

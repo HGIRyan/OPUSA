@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import { connect } from 'react-redux';
-import { Layout1, LoadingWrapper, LargeContentHolder, ReportTable, DefaultLink, pagination, LoadingWrapperSmall } from '../../../utilities/index';
+import { Layout1, LoadingWrapper, LargeContentHolder, ReportTable, pagination, LoadingWrapperSmall } from '../../../utilities/index';
 import Moment from 'moment';
-import { Select, Modal } from 'react-materialize';
+import { Select } from 'react-materialize';
 import simString from 'string-similarity';
 import { debounce } from 'lodash';
 import 'react-dates/lib/css/_datepicker.css';

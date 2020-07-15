@@ -270,7 +270,7 @@ module.exports = {
 				let info = await db.info.specific_business([client_id]);
 				let cust = await db.info.customer([cust_id]);
 				// Update Activity
-				let check = cust[0].activity.active.filter((e) => e.date === Moment().format('YYYY-MM-DD'));
+				let check = cust[0].activity.active.filter((e) => e.date === Moment().format('YYYY-MM-DD') && (!e.type.includes('Direct') || !e.type.includes('Left')));
 				if (
 					info[0].feedback_alert.alert.some((e) => e.to !== `no-reply@${process.env.REACT_APP_COMPANY_EXTENSION}.com`) &&
 					info[0].feedback_alert.alert.length >= 1 &&

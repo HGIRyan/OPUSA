@@ -294,7 +294,7 @@ module.exports = {
 			}
 			res.status(200).send({ msg: 'GOOD', company: company[0] });
 		} catch (error) {
-			Err.emailMsg(e, 'UPDATE/active');
+			Err.emailMsg(error, 'UPDATE/active');
 			res.status(200).send({ msg: `BAD: ${e}` });
 		}
 	},

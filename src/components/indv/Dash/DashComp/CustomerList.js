@@ -22,13 +22,13 @@ function CustomerList(props) {
 			</td>
 			<td
 				style={(!info.active ? strike : null, { cursor: 'pointer' })}
-				onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
+				// onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
 			>
 				<DefaultLink to={{ pathname: `/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, state: props.location.state }}>{info.cus_id}</DefaultLink>
 			</td>
 			<td
 				style={(!info.active ? strike : null, { cursor: 'pointer' })}
-				onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
+				// onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
 			>
 				<DefaultLink to={{ pathname: `/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, state: props.location.state }}>
 					{info.first_name.toProper() + ' ' + info.last_name.toProper()}
@@ -36,7 +36,7 @@ function CustomerList(props) {
 			</td>
 			<td
 				style={(!info.active ? strike : null, { cursor: 'pointer' })}
-				onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
+				// onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
 			>
 				<DefaultLink to={{ pathname: `/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, state: props.location.state }}>
 					{info.rating ? info.rating : 'N/A'}
@@ -44,7 +44,7 @@ function CustomerList(props) {
 			</td>
 			<td
 				style={(!info.active ? strike : null, { cursor: 'pointer' })}
-				onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
+				// onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
 			>
 				<DefaultLink to={{ pathname: `/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, state: props.location.state }}>
 					{info.feedback_text ? info.feedback_text.slice(0, 30) : 'N/A'}
@@ -52,7 +52,7 @@ function CustomerList(props) {
 			</td>
 			<td
 				style={(!info.active ? strike : null, { cursor: 'pointer' })}
-				onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
+				// onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
 			>
 				<DefaultLink to={{ pathname: `/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, state: props.location.state }}>
 					{info.activity.active[info.activity.active.length - 1].type}
@@ -60,7 +60,7 @@ function CustomerList(props) {
 			</td>
 			<td
 				style={(!info.active ? strike : null, { cursor: 'pointer' })}
-				onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
+				// onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
 			>
 				<DefaultLink to={{ pathname: `/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, state: props.location.state }}>
 					{info.last_email ? info.last_email : 'NOT SENT'}
@@ -68,13 +68,13 @@ function CustomerList(props) {
 			</td>
 			<td
 				style={(!info.active ? strike : null, { cursor: 'pointer' })}
-				onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
+				// onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
 			>
 				<DefaultLink to={{ pathname: `/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, state: props.location.state }}>{info.service}</DefaultLink>
 			</td>
 			<td
 				style={(!info.active ? strike : null, { cursor: 'pointer' })}
-				onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
+				// onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
 			>
 				<DefaultLink to={{ pathname: `/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, state: props.location.state }}>
 					{info.activity.active[info.activity.active.length - 1].date < '2016-05-25'
@@ -84,7 +84,7 @@ function CustomerList(props) {
 			</td>
 			<td
 				style={(!info.active ? strike : null, { cursor: 'pointer' })}
-				onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
+				// onClick={() => props.history.push(`/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, props.location.state)}
 			>
 				<DefaultLink to={{ pathname: `/indv-customer/${cor_id}/${info.cus_id}/${client_id}`, state: props.location.state }}>
 					{info.last_sent < '2016-05-25' ? 'NOT SENT' : Moment(info.last_sent).format('MMM Do, YY')}

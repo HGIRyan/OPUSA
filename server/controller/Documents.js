@@ -623,7 +623,7 @@ module.exports = {
                      </div>
                   </div>
                </div>
-               <div class='midsplit card'></div>
+               <div class='midsplit'></div>
             </div>
             <div class='threesplit'>
                <div class='feedbacksplit'>

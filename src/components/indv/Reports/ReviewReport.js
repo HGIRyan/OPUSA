@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import axios from 'axios';
-import { Layout1, LoadingWrapper, ThreeSplit, BoxSplit } from '../../../utilities/index';
-import { OReviews, FeedDonut, NPSBreakdown, SentStats, RevGrowth, FeedList, RangeSelect, ExportReport, ReviewsGraph } from './RevReport';
+import { Layout1, LoadingWrapper, ThreeSplit } from '../../../utilities/index';
+import { OReviews, FeedDonut, NPSBreakdown, SentStats, FeedList, RangeSelect, ExportReport, ReviewsGraph } from './RevReport';
 import Moment from 'moment';
 import 'react-dates/lib/css/_datepicker.css';
 import 'react-dates/initialize';
@@ -172,65 +172,6 @@ class ReviewReport extends Component {
 		this.setState({ address, auto_amt, reviews: reviews.reviews, customers, checklist, og: exists[0] });
 	}
 
-	style(cust) {
-		let { showAll } = this.state;
-		if (typeof cust[0] !== 'undefined') {
-			if (!showAll) {
-				cust = cust.slice(0, 10);
-			}
-			let type = cust[0].rating >= 4 ? 'promoter' : cust[0].rating <= 2 ? 'demoter' : 'passive';
-			let { client_id, cor_id } = this.props.match.params;
-			return cust.map((e, i) => {
-				let name = `${e.first_name} ${e.last_name}`;
-				return (
-					<div
-						className="card "
-						style={{
-							width: '80%',
-							height: '5vh',
-							marginBottom: '1vh',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'space-between',
-							padding: '0 2.5%',
-							cursor: 'pointer',
-						}}
-						onClick={() => this.props.history.push(`/indv-customer/${cor_id}/${e.cus_id}/${client_id}`, this.props.location.state)}
-						key={i}
-					>
-						<div style={{ display: 'flex', alignItems: 'center' }}>
-							<div
-								style={{
-									height: '2.5vh',
-									width: '3vh',
-									border: 'solid black 1px',
-									borderRadius: '3vh 3vh',
-									display: 'flex',
-									justifyContent: 'center',
-									alignItems: 'center',
-									backgroundColor: type === 'promoter' ? 'rgba(52, 168, 83, 1)' : type === 'demoter' ? 'rgba(234, 67, 53, 1)' : '#fbbc05',
-								}}
-							>
-								{e.rating}
-							</div>
-							<h6 style={{ margin: '0', padding: '0', marginLeft: '2.5%' }}>{name.slice(0, 25)}</h6>
-							{e.feedback_text !== 'N/A' &&
-							e.feedback_text !== '' &&
-							typeof e.feedback_text !== 'undefined' &&
-							e.feedback_text !== 'NA' &&
-							e.feedback_text !== null ? (
-								<p style={{ marginLeft: '2.5%' }}>
-									<i className="material-icons md-18">feedback</i>
-								</p>
-							) : null}
-						</div>
-						<h6 className="right-align">{Moment(e.activity.active[e.activity.active.length - 1].date).format('MMM Do, YY')}</h6>
-					</div>
-				);
-			});
-		}
-	}
-
 	async getInfo() {
 		let { client_id } = this.props.match.params;
 		await axios.get(`/api/indv/customers&business/${client_id}`).then((res) => {
@@ -359,23 +300,6 @@ class ReviewReport extends Component {
 		let { promoters, passives, demoters, og, responses } = this.state;
 		let perm = this.props.location.state.permissions;
 		let width = window.innerWidth;
-		let nps = 100;
-		let tot = 0;
-		let promPerc = Math.floor((promoters.length / responses) * 100);
-		let demPerc = Math.floor((demoters.length / responses) * 100);
-		let passPerc = Math.floor((passives.length / responses) * 100);
-		if (promPerc + demPerc + passPerc !== 100) {
-			let num = Math.abs(promPerc + demPerc + passPerc - 100);
-			if (promPerc + demPerc + passPerc > 100) {
-				promPerc = promPerc - num;
-			} else {
-				promPerc = promPerc + num;
-			}
-		}
-		if (Array.isArray(promoters) && Array.isArray(passives) && Array.isArray(demoters)) {
-			tot = promoters.length + passives.length + demoters.length;
-			nps = promPerc - demPerc;
-		}
 
 		let bus = Array.isArray(this.state.bus) ? this.state.bus[0] : this.state.bus;
 		let facebook = bus.reviews.reviews.filter((e) => e.facebook);
@@ -429,21 +353,9 @@ class ReviewReport extends Component {
 							{og.reviews ? <OReviews site={'3rd'} og={og} state={this.state} {...this.props} facebook={facebook} /> : null}
 						</ThreeSplit>
 						<div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' }}>
+							{Array.isArray(promoters) ? <FeedDonut og={og} promoters={promoters} demoters={demoters} {...this.props} passives={passives} /> : null}
 							{Array.isArray(promoters) ? (
-								<FeedDonut nps={nps} og={og} promoters={promoters} demoters={demoters} tot={tot} {...this.props} passives={passives} />
-							) : null}
-							{Array.isArray(promoters) ? (
-								<NPSBreakdown
-									nps={nps}
-									og={og}
-									promoters={promoters}
-									demoters={demoters}
-									tot={tot}
-									{...this.props}
-									passives={passives}
-									promPerc={promPerc}
-									demPerc={demPerc}
-								/>
+								<NPSBreakdown og={og} promoters={promoters} demoters={demoters} {...this.props} passives={passives} responses={responses} />
 							) : null}
 							{perm === 'admin' && this.state.info ? (
 								<SentStats
@@ -464,39 +376,9 @@ class ReviewReport extends Component {
 							) : null
 						) : null}
 						<ThreeSplit height="auto" align="flex-start" padding="0" just="space-between">
-							<BoxSplit width="30%" height="auto">
-								<h5 style={{ margin: '0', padding: '0' }}>Promoters</h5>
-								<p style={{ margin: '0', padding: '0', fontSize: '.8em' }}>{promPerc}% of Feedback</p>
-								<hr />
-								{this.style(promoters)}
-								{promoters.length >= 10 ? (
-									<p onClick={() => this.setState({ showAll: !this.state.showAll })} style={{ textDecoration: 'underline', cursor: 'pointer' }}>
-										Show {!this.state.showAll ? 'ALL' : 'LESS'} Responses
-									</p>
-								) : null}
-							</BoxSplit>
-							<BoxSplit width="30%" height="auto">
-								<h5 style={{ margin: '0', padding: '0' }}>Passives</h5>
-								<p style={{ margin: '0', padding: '0', fontSize: '.8em' }}>{passPerc}% of Feedback</p>
-								<hr />
-								{this.style(passives)}
-								{passives.length >= 10 ? (
-									<p onClick={() => this.setState({ showAll: !this.state.showAll })} style={{ textDecoration: 'underline', cursor: 'pointer' }}>
-										Show {!this.state.showAll ? 'ALL' : 'LESS'} Responses
-									</p>
-								) : null}
-							</BoxSplit>
-							<BoxSplit width="30%" height="auto">
-								<h5 style={{ margin: '0', padding: '0' }}>Detractors</h5>
-								<p style={{ margin: '0', padding: '0', fontSize: '.8em' }}>{demPerc}% of Feedback</p>
-								<hr />
-								{this.style(demoters)}
-								{demoters.length >= 10 ? (
-									<p onClick={() => this.setState({ showAll: !this.state.showAll })} style={{ textDecoration: 'underline', cursor: 'pointer' }}>
-										Show {!this.state.showAll ? 'ALL' : 'LESS'} Responses
-									</p>
-								) : null}
-							</BoxSplit>
+							<FeedList type={'Promoters'} promoters={promoters} passives={passives} demoters={demoters} {...this.props} responses={responses} />
+							<FeedList type={'Passives'} promoters={promoters} passives={passives} demoters={demoters} {...this.props} responses={responses} />
+							<FeedList type={'Detractors'} promoters={promoters} passives={passives} demoters={demoters} {...this.props} responses={responses} />
 						</ThreeSplit>
 					</div>
 				</LoadingWrapper>

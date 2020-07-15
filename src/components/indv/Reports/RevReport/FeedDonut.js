@@ -1,9 +1,8 @@
 import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
-import ReactTooltip from 'react-tooltip';
 
 function FeedDonut(props) {
-	let { nps, og, promoters, demoters, tot, passives } = props;
+	let { og, promoters, demoters, passives } = props;
 	let ratings = {};
 	if (og.reviews) {
 		let llRating = 0;
@@ -45,6 +44,7 @@ function FeedDonut(props) {
 			/>
 		);
 	};
+	let diff = og.reviews ? Math.abs(ratings.gRating - ratings.llRating).toFixed(1) : null;
 	return (
 		<div style={(def, { display: 'flex', flexDirection: 'column', width: '30%', height: '35vh' })} className="card ">
 			<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '100%', padding: '5%', paddingBottom: '0' }}>
@@ -58,19 +58,12 @@ function FeedDonut(props) {
 							fontWeight: 'bold',
 							margin: '0 0 0 .5vw',
 							padding: '0',
-							color: nps <= 0 ? '#ea4335' : nps <= 30 ? '#fbbc05' : nps <= 70 ? '#0396a6' : '#34a853',
+							color: diff <= 0.1 ? '#ea4335' : diff <= 0.5 ? '#fbbc05' : diff <= 1.5 ? '#0396a6' : '#34a853',
 						}}
 					>
-						{og.reviews ? Math.abs(ratings.gRating - ratings.llRating).toFixed(1) : null}
+						{diff}
 					</h4>
 				</div>
-				<ReactTooltip id="NPS" type="dark" effect="float" place="bottom">
-					<span>
-						{((promoters.length / tot) * 100).toFixed(0)}% - {((demoters.length / tot) * 100).toFixed(0)}% = {nps}
-					</span>
-					<br />
-					<span>Promoters - Detractors = NPS</span>
-				</ReactTooltip>
 			</div>
 			<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '70%' }}>{feedbackChart()}</div>
 		</div>

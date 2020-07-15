@@ -295,6 +295,7 @@ class App extends Component {
 						<ClientRoute path="/indv-customer/new/:cor_id/:client_id" component={CustNew} />
 						<ClientRoute path="/client-dash/:cor_id/emails/reviews/:client_id" component={ReviewEmails} />
 						<ClientRoute path="/client-dash/:cor_id/emails/:type/:client_id" component={TypeEmails} />
+						<ClientRoute path="/client-dash/:cor_id/business-Details/:client_id/:page" component={BusinessDetails} />
 						<ClientRoute path="/client-dash/:cor_id/business-Details/:client_id" component={BusinessDetails} />
 						<ClientRoute exact path="/client-dash/:cor_id/:client_id" component={ClientDash} />
 						<ClientRoute path="/client-dash/:cor_id/report/review/:client_id" component={ClientReviewReport} />
