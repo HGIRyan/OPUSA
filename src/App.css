@@ -1,11 +1,11 @@
 /* prefixed by https://autoprefixer.github.io (PostCSS: v7.0.26, autoprefixer: v9.7.3) */
 :root {
-	--primary-color: #00d885;
-	--primary-hover: #00d885af;
+	--primary-color: rgba(22, 192, 240, 1);
+	--primary-hover: rgba(22, 192, 240, 0.5);
 	--secondary-color: #6c6a6b;
 	--secondary-hover: rgba(108, 106, 107, 0.75);
-	--tertiary-color: #00283d;
-	--tertiary-hover: #00283db4;
+	--tertiary-color: rgb(45, 43, 49);
+	--tertiary-hover: rgba(74, 37, 176, 0.226);
 }
 /*  */
 @import url('https://fonts.googleapis.com/css?family=Hind+Vadodara&display=swap');
