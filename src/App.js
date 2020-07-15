@@ -257,8 +257,8 @@ class App extends Component {
 					actions={<div></div>}
 					header="BROWSER NOT SUPPORTED"
 				>
-					We're sorry, but this browser is not supported by Lift Local's Application.
-					<br /> To get the best experience using Lift Local's Application, we recommend that you switch to using Chrome.
+					We're sorry, but this browser is not supported by {process.env.REACT_APP_COMPANY_NAME}'s Application.
+					<br /> To get the best experience using {process.env.REACT_APP_COMPANY_NAME}'s Application, we recommend that you switch to using Chrome.
 					<br />
 					<br />
 					<a href="https://www.google.com/chrome/">DOWNLOAD CHROME</a>
