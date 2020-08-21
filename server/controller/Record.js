@@ -194,7 +194,7 @@ module.exports = {
 	},
 	fastFeedback: async (req, res) => {
 		let db = req.app.get('db');
-		let { client_id, cust_id, rating, source, cor_id } = req.body;
+		let { client_id, cust_id, rating, source, cor_id, type } = req.body;
 		client_id = DefaultFun.cUnHash(client_id);
 		cust_id = DefaultFun.cUnHash(cust_id);
 		// rating = DefaultFun.cUnHash(rating);
@@ -219,17 +219,14 @@ module.exports = {
 				rating !== 'direct'
 			) {
 				// check
-				// console.log('SENDING NOTI EMAIL', noti_email[0], cust_id, update[0].last_email);
-				if (parseInt(checkRating[0].rating) === parseInt(rating)) {
-					// console.log(source, cust_id, checkRating);
+				if (parseInt(checkRating[0].rating) !== parseInt(rating) && !check.some((p) => p.type.includes('Rating') && p.date === Moment().format('YYYY-MM-DD'))) {
 					let noti_email = await db.record.checks.noti_email([cust_id, update[0].last_email]);
-					// console.log('here', checkRating);
-					if (noti_email[0] || parseInt(og[0].rating) !== parseInt(rating)) {
+					if (noti_email[0] && parseInt(og[0].rating) !== parseInt(rating)) {
 						// Update Noti_email
 						let same = parseInt(og[0].rating) === null ? true : false;
 						await db.record.checks.update_noti_email([cust_id, update[0].last_email]);
-						if (Array.isArray(info[0].feedback_alert.alert) ? info[0].feedback_alert.alert[0] : false) {
-							// console.log('SENDING EMAIL');
+						if (Array.isArray(info[0].feedback_alert.alert) ? info[0].feedback_alert.alert[0] : false && !check[0]) {
+							// console.log('SENDING NOTIFICATION EMAIL');
 							await module.exports.notificationEmail({ info, rating, cust, same });
 						}
 					}
@@ -238,7 +235,7 @@ module.exports = {
 			if (!check[0]) {
 				await cust[0].activity.active.push({
 					date: Moment().format('YYYY-MM-DD'),
-					type: rating === 'direct' ? 'Clicked Direct Link' : `Left Rating of ${rating}`,
+					type: rating === 'direct' ? `Clicked Direct Link | ${type}` : `Left Rating of ${rating} | ${type}`,
 				});
 				(await update[0].rating_history) ? update[0].rating_history.rating.push(parseInt({ rating: rating, date: Moment().format('YYYY-MM-DD') })) : null;
 				let activity = cust[0].activity;
